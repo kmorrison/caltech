@@ -15,4 +15,5 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^find_times/', 'jeeves.views.find_times'),
+    url(r'^find_times_post/', 'jeeves.views.find_times_post'),
 )
