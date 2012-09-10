@@ -37,10 +37,12 @@ class FindTimesForm(forms.Form):
     also_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),
             required=False,
+            widget=forms.widgets.CheckboxSelectMultiple,
     )
     dont_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),
             required=False,
+            widget=forms.widgets.CheckboxSelectMultiple,
             label="Don't Include",
     )
 
