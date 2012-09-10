@@ -13,4 +13,6 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
+
+    url(r'^find_times/', 'jeeves.views.find_times'),
 )

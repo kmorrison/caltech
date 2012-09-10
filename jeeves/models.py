@@ -7,7 +7,11 @@ class Interviewer(models.Model):
     domain = models.CharField(max_length=256)
 
     def __unicode__(self):
-         return self.name
+        return self.name
+
+    @property
+    def address(self):
+        return "%s@%s" % (self.name, self.domain)
 
 
 class Requisition(models.Model):
@@ -16,7 +20,7 @@ class Requisition(models.Model):
     interviewers = models.ManyToManyField(Interviewer, related_name='requisitions')
 
     def __unicode__(self):
-         return self.name
+        return self.name
 
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
