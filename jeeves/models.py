@@ -13,6 +13,9 @@ class Interviewer(models.Model):
     def address(self):
         return "%s@%s" % (self.name, self.domain)
 
+    class Meta:
+        ordering = ('name',)
+
 
 class Requisition(models.Model):
 
