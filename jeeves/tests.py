@@ -113,6 +113,12 @@ class GetInterviewersTestCase(BaseTestCase):
                 set(views.get_interviewers(self.req, dont_include=[self.first_mate])),
         )
 
+    def test_include_already_in(self):
+        self.assertEqual(
+                (self.captain, self.first_mate),
+                views.get_interviewers(self.req, also_include=[self.first_mate]),
+        )
+
     def test_exclude_non_existent(self):
         self.assertEqual(
                 set((self.captain, self.first_mate)),
