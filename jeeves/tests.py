@@ -7,7 +7,7 @@ from django.test.client import Client
 from jeeves import models
 from jeeves import views
 
-DATEPICKER_FORMAT = "%Y-%m-%d %H:%M"
+DATEPICKER_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class BaseTestCase(TestCase):
     def setUp(self):
