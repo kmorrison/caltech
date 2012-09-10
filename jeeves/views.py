@@ -41,11 +41,13 @@ class FindTimesForm(forms.Form):
             label="Don't Include",
     )
 
-    def __getattr__(self, attr_name):
-        try:
-            return self.cleaned_data[attr_name]
-        except Exception:
-            return super(FindTimesForm, self).__getattr__(attr_name)
+    @property
+    def requisition_and_custom_interviewers(self):
+        return (
+                self.cleaned_data['requisition'],
+                self.cleaned_data['also_include'],
+                self.cleaned_data['dont_include'],
+        )
 
 def find_times(request):
     context = dict(
@@ -58,9 +60,7 @@ def find_times_post(request):
     find_times_form = FindTimesForm(request.POST)
     if find_times_form.is_valid():
         interviewers = get_interviewers(
-                find_times_form.requisition,
-                find_times_form.also_include,
-                find_times_form.dont_include,
+                *find_times_form.requisition_and_custom_interviewers
         )
 
         return render(
