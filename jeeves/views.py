@@ -6,6 +6,9 @@ from django.template import RequestContext
 
 from jeeves import models
 
+# TODO: Clearly the wrong place for this
+TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
 # TODO: Where does this go?
 def all_reqs():
     return models.Requisition.objects.all()
@@ -28,8 +31,8 @@ def get_interviewers(requisition, also_include=None, dont_include=None):
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs())
 
-    #start_time = forms.DateTimeField()
-    #end_time = forms.DateTimeField()
+    start_time = forms.DateTimeField()
+    end_time = forms.DateTimeField()
 
     also_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),

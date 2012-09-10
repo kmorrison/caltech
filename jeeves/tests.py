@@ -1,9 +1,13 @@
+from datetime import timedelta
+from datetime import datetime
+
 from django.test import TestCase
 from django.test.client import Client
 
 from jeeves import models
 from jeeves import views
 
+DATEPICKER_FORMAT = "%Y-%m-%d %H:%M"
 
 class BaseTestCase(TestCase):
     def setUp(self):
@@ -48,11 +52,26 @@ class FindTimesViewTestCase(BaseTestCase):
         dont_include_select = form.fields['dont_include']
         self.assertEqual(interviewer_set, set(dont_include_select.queryset))
 
-    def _submit_form_with_data(self, expected_req, expect_response=200, expected_include=None, expected_exclude=None, **form_data):
+    def _submit_form_with_data(
+            self,
+            expected_req,
+            expect_response=200,
+            expected_include=None,
+            expected_exclude=None,
+            expected_start_time=None,
+            expected_end_time=None,
+            **form_data
+    ):
         if expected_include is None:
             expected_include = []
         if expected_exclude is None:
             expected_exclude = []
+        # Setup time input, which is required and a pain to setup every time
+        now = datetime.now().replace(second=0, microsecond=0)
+        tomorrow = now + timedelta(days=1)
+        form_data.setdefault('start_time', now.strftime(DATEPICKER_FORMAT),)
+        form_data.setdefault('end_time', tomorrow.strftime(DATEPICKER_FORMAT),)
+
         response = self.c.get('/find_times/')
         self.assertEqual(response.status_code, 200)
 
@@ -67,6 +86,11 @@ class FindTimesViewTestCase(BaseTestCase):
         self.assertEqual(req, expected_req)
         self.assertEqual(set(include), set(expected_include))
         self.assertEqual(set(exclude), set(expected_exclude))
+
+        if expected_start_time is not None:
+            self.assertEqual(bound_form.cleaned_data['start_time'], expected_start_time)
+        if expected_end_time is not None:
+            self.assertEqual(bound_form.cleaned_data['end_time'], expected_end_time)
         return post_response
 
     def test_form_submit(self):
@@ -93,6 +117,19 @@ class FindTimesViewTestCase(BaseTestCase):
                 dont_include=[self.first_mate.id],
         )
 
+    def test_times(self):
+        now = datetime.now().replace(second=0, microsecond=0)
+        tomorrow = now + timedelta(days=1)
+        self._submit_form_with_data(
+                self.req,
+                expected_start_time=now,
+                expected_end_time=tomorrow,
+
+                requisition=self.req.id,
+                start_time=now.strftime(DATEPICKER_FORMAT),
+                end_time=tomorrow.strftime(DATEPICKER_FORMAT),
+        )
+
 class GetInterviewersTestCase(BaseTestCase):
 
     def test_get_interviewers(self):
@@ -115,8 +152,8 @@ class GetInterviewersTestCase(BaseTestCase):
 
     def test_include_already_in(self):
         self.assertEqual(
-                (self.captain, self.first_mate),
-                views.get_interviewers(self.req, also_include=[self.first_mate]),
+                [self.captain, self.first_mate],
+                list(views.get_interviewers(self.req, also_include=[self.first_mate])),
         )
 
     def test_exclude_non_existent(self):
