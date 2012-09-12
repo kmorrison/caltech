@@ -189,3 +189,12 @@ class CalendarClientTestCase(BaseTestCase):
         self.assertEqual(len(calendar_response.interview_calendars), 2)
         self.assertEqual([self.captain, self.first_mate], [ic.interviewer for ic in calendar_response.interview_calendars])
 
+    def test_time_bounds(self):
+        calendar_response = calendar_client.get_calendars([self.captain], self.time_period)
+        self.assertEqual(len(calendar_response.interview_calendars), 1)
+        self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
+
+        busy_times = calendar_response.interview_calendars[0].busy_times
+        self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
+        self.assertTrue(self.time_period.end_time >= busy_times[-1].end_time)
+

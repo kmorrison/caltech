@@ -2,7 +2,10 @@ from datetime import timedelta
 from datetime import datetime
 import itertools
 
+import pytz
+
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+PACIFIC = pytz.timezone('US/Pacific')
 
 
 class TimePeriod(object):
@@ -16,13 +19,13 @@ class TimePeriod(object):
 
 
 # TODO: time_lib?
-def format_datetime(dt):
-    return dt.strftime(TIME_FORMAT)
+def format_datetime_utc(dt):
+    return dt.replace(tzinfo=PACIFIC).astimezone(pytz.utc).replace(tzinfo=None).strftime(TIME_FORMAT)
 
-def parse_datetime(dt):
-    parsed = datetime.strptime(dt, TIME_FORMAT).replace(second=0)
+def parse_utc_datetime(dt):
+    parsed = datetime.strptime(dt, TIME_FORMAT).replace(second=0).replace(tzinfo=pytz.utc)
     # Google gives us back times in UTC
-    return parsed - timedelta(hours=7)
+    return parsed.astimezone(PACIFIC).replace(tzinfo=None)
 
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -39,14 +42,17 @@ def collapse_times(time_pairs):
     for chunk1, chunk2 in pairwise(time_pairs):
         if chunk1[1] >= chunk2[0]:
             if tmp_first is None:
-                tmp_first = min(chunk1[1], chunk2[0])
+                tmp_first = chunk1[0]
         else:
             if tmp_first is None:
                 collapsed_times.append(chunk1)
             else:
                 collapsed_times.append((tmp_first, chunk1[1]))
                 tmp_first = None
-    if tmp_first is not None:
+
+    if tmp_first is None:
+        collapsed_times.append(chunk2)
+    else:
         collapsed_times.append((tmp_first, chunk2[1]))
 
     return collapsed_times
