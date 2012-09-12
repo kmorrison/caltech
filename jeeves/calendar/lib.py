@@ -1,4 +1,28 @@
+from datetime import timedelta
+from datetime import datetime
 import itertools
+
+TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+class TimePeriod(object):
+
+    def __init__(self, start_time, end_time):
+        self.start_time = start_time
+        self.end_time = end_time
+
+    def __repr__(self):
+        return "(%s, %s)" % (self.start_time, self.end_time)
+
+
+# TODO: time_lib?
+def format_datetime(dt):
+    return dt.strftime(TIME_FORMAT)
+
+def parse_datetime(dt):
+    parsed = datetime.strptime(dt, TIME_FORMAT).replace(second=0)
+    # Google gives us back times in UTC
+    return parsed - timedelta(hours=7)
 
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."

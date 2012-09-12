@@ -6,6 +6,8 @@ from django.test.client import Client
 
 from jeeves import models
 from jeeves import views
+from jeeves.calendar.client import calendar_client
+from jeeves.calendar.lib import TimePeriod
 
 DATEPICKER_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -167,3 +169,24 @@ class GetInterviewersTestCase(BaseTestCase):
                 set((self.captain, self.first_mate)),
                 set(views.get_interviewers(self.req, also_include=[self.pilot], dont_include=[self.pilot])),
         )
+
+class CalendarClientTestCase(BaseTestCase):
+
+    def setUp(self):
+        super(CalendarClientTestCase, self).setUp()
+        self.calendar_client = calendar_client
+        now = datetime.now()
+        tomorrow = now + timedelta(days=1)
+        self.time_period = TimePeriod(now, tomorrow)
+
+    def test_one_interviewer(self):
+        calendar_response = calendar_client.get_calendars([self.captain], self.time_period)
+        self.assertEqual(len(calendar_response.interview_calendars), 1)
+        self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
+        print calendar_response.interview_calendars[0].busy_times
+
+    def test_two_interviewers(self):
+        calendar_response = calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        self.assertEqual(len(calendar_response.interview_calendars), 2)
+        self.assertEqual([self.captain, self.first_mate], [ic.interviewer for ic in calendar_response.interview_calendars])
+

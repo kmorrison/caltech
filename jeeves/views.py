@@ -5,6 +5,8 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from jeeves import models
+from jeeves.calendar.client import calendar_client
+from jeeves.calendar.lib import TimePeriod
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -54,6 +56,10 @@ class FindTimesForm(forms.Form):
                 self.cleaned_data['dont_include'],
         )
 
+    @property
+    def time_period(self):
+        return TimePeriod(self.start_time, self.end_time)
+
 def find_times(request):
     context = dict(
             find_times_form=FindTimesForm(),
@@ -67,6 +73,8 @@ def find_times_post(request):
         interviewers = get_interviewers(
                 *find_times_form.requisition_and_custom_interviewers
         )
+
+        #interview_calendars = calendar_client.get_calendars(interviewers, find_times_form.time_period)
 
         return render(
                 request,
