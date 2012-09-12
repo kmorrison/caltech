@@ -21,4 +21,13 @@
     <input type="submit" value="Submit"/>
 </form>
 
-{% if test_results %} {{ test_results }} {% endif %}
+{% if interview_calendars %} 
+{% for interview_calendar in interview_calendars %} 
+{{interview_calendar.interviewer}}
+<ul>
+    {% for busy_time in interview_calendar.busy_times %} 
+    <li>{{busy_time}}</li>
+    {% endfor %}
+</ul>
+{% endfor %}
+{% endif %}

@@ -183,7 +183,6 @@ class CalendarClientTestCase(BaseTestCase):
         calendar_response = calendar_client.get_calendars([self.captain], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
-        print calendar_response.interview_calendars[0].busy_times
 
     def test_two_interviewers(self):
         calendar_response = calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
