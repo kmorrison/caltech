@@ -196,5 +196,4 @@ class CalendarClientTestCase(BaseTestCase):
 
         busy_times = calendar_response.interview_calendars[0].busy_times
         self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
-        self.assertTrue(self.time_period.end_time >= busy_times[-1].end_time)
 

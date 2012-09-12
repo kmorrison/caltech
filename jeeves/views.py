@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render
@@ -58,7 +60,7 @@ class FindTimesForm(forms.Form):
 
     @property
     def time_period(self):
-        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
+        return TimePeriod(self.cleaned_data['start_time'] - timedelta(minutes=1), self.cleaned_data['end_time'])
 
 
 def find_times(request):
