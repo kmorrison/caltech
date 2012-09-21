@@ -3,7 +3,9 @@ from datetime import datetime
 
 from django.test import TestCase
 from django.test.client import Client
+import pytz
 
+from caltech import settings
 from jeeves import models
 from jeeves import views
 from jeeves.calendar.client import calendar_client
@@ -69,7 +71,7 @@ class FindTimesViewTestCase(BaseTestCase):
         if expected_exclude is None:
             expected_exclude = []
         # Setup time input, which is required and a pain to setup every time
-        now = datetime.now().replace(second=0, microsecond=0)
+        now = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(pytz.timezone(settings.TIME_ZONE)).replace(second=0, microsecond=0)
         tomorrow = now + timedelta(days=1)
         form_data.setdefault('start_time', now.strftime(DATEPICKER_FORMAT),)
         form_data.setdefault('end_time', tomorrow.strftime(DATEPICKER_FORMAT),)
@@ -120,7 +122,7 @@ class FindTimesViewTestCase(BaseTestCase):
         )
 
     def test_times(self):
-        now = datetime.now().replace(second=0, microsecond=0)
+        now = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(pytz.timezone(settings.TIME_ZONE)).replace(second=0, microsecond=0)
         tomorrow = now + timedelta(days=1)
         self._submit_form_with_data(
                 self.req,
@@ -175,7 +177,7 @@ class CalendarClientTestCase(BaseTestCase):
     def setUp(self):
         super(CalendarClientTestCase, self).setUp()
         self.calendar_client = calendar_client
-        now = datetime.now()
+        now = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(pytz.timezone(settings.TIME_ZONE)).replace(second=0, microsecond=0)
         tomorrow = now + timedelta(days=1)
         self.time_period = TimePeriod(now, tomorrow)
 

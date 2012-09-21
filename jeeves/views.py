@@ -60,7 +60,7 @@ class FindTimesForm(forms.Form):
 
     @property
     def time_period(self):
-        return TimePeriod(self.cleaned_data['start_time'] - timedelta(minutes=1), self.cleaned_data['end_time'])
+        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
 
 
 def find_times(request):
@@ -77,14 +77,14 @@ def find_times_post(request):
                 *find_times_form.requisition_and_custom_interviewers
         )
 
-        interview_calendars = calendar_client.get_calendars(interviewers, find_times_form.time_period).interview_calendars
+        calendar_response = calendar_client.get_calendars(interviewers, find_times_form.time_period)
 
         return render(
                 request,
                 'find_times.html',
                 dict(
                     find_times_form=find_times_form,
-                    interview_calendars=interview_calendars,
+                    calendar_response=calendar_response,
                 )
         )
 

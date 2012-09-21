@@ -4,8 +4,9 @@ import itertools
 
 import pytz
 
+from caltech import settings
+
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-PACIFIC = pytz.timezone('US/Pacific')
 
 
 class TimePeriod(object):
@@ -20,12 +21,12 @@ class TimePeriod(object):
 
 # TODO: time_lib?
 def format_datetime_utc(dt):
-    return dt.replace(tzinfo=PACIFIC).astimezone(pytz.utc).replace(tzinfo=None).strftime(TIME_FORMAT)
+    return dt.astimezone(pytz.utc).strftime(TIME_FORMAT)
 
 def parse_utc_datetime(dt):
     parsed = datetime.strptime(dt, TIME_FORMAT).replace(second=0).replace(tzinfo=pytz.utc)
     # Google gives us back times in UTC
-    return parsed.astimezone(PACIFIC).replace(tzinfo=None)
+    return parsed.astimezone(pytz.timezone(settings.TIME_ZONE))
 
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
@@ -34,6 +35,9 @@ def pairwise(iterable):
     return itertools.izip(a, b)
 
 def collapse_times(time_pairs):
+    if len(time_pairs) <= 1:
+        return time_pairs
+
     time_pairs = sorted(time_pairs)
 
     tmp_first = None

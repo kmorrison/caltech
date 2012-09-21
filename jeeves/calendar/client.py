@@ -1,6 +1,8 @@
 from datetime import timedelta
 from datetime import datetime
+import simplejson as json
 import random
+from django.core.serializers.json import DjangoJSONEncoder
 
 from caltech import secret
 from . import schedule
@@ -24,7 +26,14 @@ class InterviewCalendar(object):
     def __init__(self, interviewer, period_of_interest, start_end_pairs):
         self.interviewer = interviewer
 
-        busy_times = [(lib.parse_utc_datetime(dt_dict['start']), lib.parse_utc_datetime(dt_dict['end'])) for dt_dict in start_end_pairs]
+        busy_times = [
+                (
+                    lib.parse_utc_datetime(dt_dict['start']),
+                    lib.parse_utc_datetime(dt_dict['end']),
+                )
+                for dt_dict in start_end_pairs
+        ]
+
         self.busy_times = [
                 lib.TimePeriod(start_time, end_time)
                 for (start_time, end_time) in lib.collapse_times(
@@ -49,6 +58,32 @@ class CalendarResponse(object):
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
         ]
+
+    @property
+    def interviewers(self):
+        return [interview_calendar.interviewer for interview_calendar in self.interview_calendars]
+
+    @property
+    def json_interviewers(self):
+        return json.dumps([dict(id=interviewer.address, name=interviewer.name) for interviewer in self.interviewers])
+
+    @property
+    def json_events(self):
+        events = []
+        for interview_calendar in self.interview_calendars:
+            events.extend([
+                    dict(
+                        start=busy_time.start_time,
+                        end=busy_time.end_time,
+                        title='',
+                        allDay=False,
+                        resource=interview_calendar.interviewer.address,
+                    )
+                for busy_time in interview_calendar.busy_times
+            ])
+        print 11111
+
+        return json.dumps(events, cls=DjangoJSONEncoder)
 
 
 class Client(object):
