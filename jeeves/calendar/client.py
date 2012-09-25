@@ -76,7 +76,7 @@ class CalendarResponse(object):
                 )
                 for interview_calendar in self.interview_calendars
         ]
-        return json.dumps(serialized_calendars, cls=DjangoJSONEncoder)
+        return json.dumps(sorted(serialized_calendars, key=lambda x: x.get('address')), cls=DjangoJSONEncoder)
 
 
 class Client(object):

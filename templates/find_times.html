@@ -1,20 +1,6 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-<head>
-<link type="text/css" href="/static/css/smoothness/jquery-ui-1.8.23.custom.css" rel="stylesheet" />
-<link type="text/css" href="/static/css/datepicker.css" rel="stylesheet" />
-<script type="text/javascript" src="/static/js/jquery-1.8.1.min.js"></script> 
-<script type="text/javascript" src="/static/js/jquery-ui-1.8.23.custom.min.js"></script> 
-<script type="text/javascript" src="/static/js/jquery-ui-timepicker-addon.js"></script> 
-<script type="text/javascript" src="/static/js/fullcalendar-1.5.3/fullcalendar/fullcalendar.js"></script> 
+{% extends "base.html" %}
+{% block header_includes %}
 <script type="text/javascript">
-    $(function() {
-        $("#id_start_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-    $(function() {
-        $("#id_end_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-
     {% if calendar_response %} 
     $(document).ready(function() {
         var calendars = {{calendar_response.json_events|safe}};
@@ -27,7 +13,7 @@
 
             $('#mycalendar').append($("<table><thead></thead><tbody></tbody></table>").attr("id", "calendar-table"));
             var tr = $('#mycalendar thead').append("<tr></tr>");
-            tr.append("Interviewer");
+            tr.append("<th>Interviewer</th>");
             for (i = {{START_HOUR}}; i < {{START_HOUR}} + {{HOURS_PER_DAY}}; i++){
                 tr.append($('<th colspan="' + {{CHUNKS_PER_HOUR}} + '">' + i + '</th>').addClass("hour-line"));
             }
@@ -92,59 +78,19 @@
     {% endif %}
 
 </script>
-<style type='text/css'>
-
-	#mycalendar {
-        margin-top: 20px;
-		width: 100%;
-        margin-bottom: 20px;
-    }
-
-    #mycalendar .doesOverlap {
-        background-color: #FF0000;
-    }
-
-    .chunk-td {
-        width: 6px;
-        margin: 0px;
-        border: 0px;
-    }
-
-    .hour-line {
-        border-left-style: solid;
-        border-left-width: 1px;
-        text-align: left;
-    }
-
-    .quarter-hour-line {
-        border-left-style: dotted;
-        border-left-width: 1px;
-
-    }
-
-    #calendar-table {
-        border-style: solid;
-        border-width: 1px;
-    }
-
-    .ui-icon {
-        display: inline-block;
-    }
-
-</style>
-</head>
-<body>
+{% endblock %}
+{% block body %}
 
 <h1>Find me the times!</h1>
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
+<div id="main-form">
 <form action="/find_times_post/" method="post">{% csrf_token %}
     {{find_times_form.as_p}}
-    <input type="submit" value="Submit"/>
+    <input id="submit-button" type="submit" value="Submit"/>
 </form>
-
-<div id='contextMenuContainer' style='background-color:#f0f0f0;width:100px;height:100px;display:none;z-index:999;border-radius:5px;border:1px solid black;position:absolute;'></div>
+</div>
 
 {% if calendar_response %} 
 <div id="mycalendar" date="">
@@ -154,16 +100,4 @@
 </div>
 {% endif %}
 
-{% if calendar_response %} 
-{% for interview_calendar in calendar_response.interview_calendars %} 
-{{interview_calendar.interviewer}}
-<ul>
-    {% for busy_time in interview_calendar.busy_times %} 
-    <li>{{busy_time}}</li>
-    {% endfor %}
-</ul>
-{% endfor %}
-{% endif %}
-
-<body>
-</html>
+{% endblock %}

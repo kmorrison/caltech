@@ -45,12 +45,10 @@ class FindTimesForm(forms.Form):
     also_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),
             required=False,
-            widget=forms.widgets.CheckboxSelectMultiple,
     )
     dont_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),
             required=False,
-            widget=forms.widgets.CheckboxSelectMultiple,
             label="Don't Include",
     )
 
@@ -66,6 +64,17 @@ class FindTimesForm(forms.Form):
     def time_period(self):
         return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
 
+class SuggestScheduleForm(FindTimesForm):
+
+    number_of_interviewers = forms.ChoiceField((i, i) for i in xrange(1, 10))
+
+    break_start_time = forms.DateTimeField(required=False)
+    break_end_time = forms.DateTimeField(required=False)
+
+
+def index(request):
+    # TODO: Should this go in static?
+    return render_to_response('index.html', {})
 
 def find_times(request):
     context = dict(
@@ -100,3 +109,35 @@ def find_times_post(request):
                 )
         )
 
+    return render(
+            request,
+            'find_times.html',
+            dict(
+                find_times_form=find_times_form,
+            )
+    )
+
+def scheduler(request):
+    context = dict(
+            scheduler_form=SuggestScheduleForm(),
+    )
+    return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
+
+def scheduler_post(request):
+    scheduler_form = SuggestScheduleForm(request.POST)
+    valid_submission = scheduler_form.is_valid()
+    if scheduler_form.is_valid():
+        interviewers = get_interviewers(
+                *scheduler_form.requisition_and_custom_interviewers
+        )
+
+        calendar_response = calendar_client.get_calendars(interviewers, scheduler_form.time_period)
+
+    return render(
+            request,
+            'scheduler.html',
+            dict(
+                scheduler_form=scheduler_form,
+                valid_submission=valid_submission,
+            )
+    )
