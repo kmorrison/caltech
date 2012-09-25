@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block header_includes %}
+<script type="text/javascript">
+    $(function() {
+        $("#id_break_start_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
+    });
+    $(function() {
+        $("#id_break_end_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
+    });
+</script>
+{% endblock %}
+
+{% block body %}
+<h1>Warning! About to do science!</h1>
+
+<div id="main-form">
+<form action="/scheduler_post/" method="post">{% csrf_token %}
+    {{scheduler_form.as_p}}
+    <input type="submit" value="Submit"/>
+</form>
+</div>
+
+{% if valid_submission %}
+<h2>YAY</h2>
+{% endif %}
+{% endblock %}

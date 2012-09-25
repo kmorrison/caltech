@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<link type="text/css" href="/static/css/smoothness/jquery-ui-1.8.23.custom.css" rel="stylesheet" />
+<link type="text/css" href="/static/css/datepicker.css" rel="stylesheet" />
+<link type="text/css" href="/static/css/jeeves.css" rel="stylesheet" />
+<script type="text/javascript" src="/static/js/jquery-1.8.1.min.js"></script> 
+<script type="text/javascript" src="/static/js/jquery-ui-1.8.23.custom.min.js"></script> 
+<script type="text/javascript" src="/static/js/jquery-ui-timepicker-addon.js"></script> 
+<script type="text/javascript">
+    $(function() {
+        $("#id_start_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
+    });
+    $(function() {
+        $("#id_end_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
+    });
+
+    $(document).ready(function() {
+        $('#id_also_include').attr('size', "5");
+        $('#id_also_include').parent().css('display', 'inline-block');
+
+        $('#id_dont_include').attr('size', "5");
+        $('#id_dont_include').parent().css('display', 'inline-block');
+        $('#submit-button').css('display', 'block');
+
+    });
+
+</script>
+
+{% block header_includes %}{% endblock %}
+</head>
+<body>
+    <a class="header-link" href="/index">Home</a>
+    <a class="header-link" href="/find_times">Find Times</a>
+    <a class="header-link" href="/scheduler">Suggest Schedules</a>
+    <a class="header-link" href="/admin">Manage</a>
+    {% block body %}{% endblock %}
+</body>
+</html>
