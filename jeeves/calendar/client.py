@@ -69,21 +69,14 @@ class CalendarResponse(object):
 
     @property
     def json_events(self):
-        events = []
-        for interview_calendar in self.interview_calendars:
-            events.extend([
-                    dict(
-                        start=busy_time.start_time,
-                        end=busy_time.end_time,
-                        title='',
-                        allDay=False,
-                        resource=interview_calendar.interviewer.address,
-                    )
-                for busy_time in interview_calendar.busy_times
-            ])
-        print 11111
-
-        return json.dumps(events, cls=DjangoJSONEncoder)
+        serialized_calendars = [
+                dict(
+                    address=interview_calendar.interviewer.address,
+                    busy_times=[(busy_period.start_time, busy_period.end_time) for busy_period in interview_calendar.busy_times],
+                )
+                for interview_calendar in self.interview_calendars
+        ]
+        return json.dumps(serialized_calendars, cls=DjangoJSONEncoder)
 
 
 class Client(object):

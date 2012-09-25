@@ -1,4 +1,5 @@
 from datetime import timedelta
+from datetime import datetime
 
 from django.http import HttpResponse
 from django import forms
@@ -12,6 +13,9 @@ from jeeves.calendar.lib import TimePeriod
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+START_HOUR = 8
+HOURS_PER_DAY = 11
+CHUNKS_PER_HOUR = 12  # Must divide evenly into 60
 
 # TODO: Where does this go?
 def all_reqs():
@@ -66,6 +70,10 @@ class FindTimesForm(forms.Form):
 def find_times(request):
     context = dict(
             find_times_form=FindTimesForm(),
+            START_DATE=datetime.now().isoformat(),
+            START_HOUR=START_HOUR,
+            HOURS_PER_DAY=HOURS_PER_DAY,
+            CHUNKS_PER_HOUR=CHUNKS_PER_HOUR,
     )
 
     return render_to_response('find_times.html', context, context_instance=RequestContext(request))
@@ -85,6 +93,10 @@ def find_times_post(request):
                 dict(
                     find_times_form=find_times_form,
                     calendar_response=calendar_response,
+                    START_DATE=find_times_form.time_period.start_time.isoformat(),
+                    START_HOUR=START_HOUR,
+                    HOURS_PER_DAY=HOURS_PER_DAY,
+                    CHUNKS_PER_HOUR=CHUNKS_PER_HOUR,
                 )
         )
 

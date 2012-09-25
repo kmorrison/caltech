@@ -1,8 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
-<link rel='stylesheet' type='text/css' href='/static/css/fullcalendar.css' />
-<link rel='stylesheet' type='text/css' href='/static/css/fullcalendar.print.css' media='print' />
 <link type="text/css" href="/static/css/smoothness/jquery-ui-1.8.23.custom.css" rel="stylesheet" />
 <link type="text/css" href="/static/css/datepicker.css" rel="stylesheet" />
 <script type="text/javascript" src="/static/js/jquery-1.8.1.min.js"></script> 
@@ -19,38 +17,119 @@
 
     {% if calendar_response %} 
     $(document).ready(function() {
-		var calendar = $('#calendar').fullCalendar({
-			header: {
-				left: '',
-				center: 'title',
-				right: ''
-			},
-			defaultView: 'resourceDay',
-			minTime: 8,
-			maxTime: 19,
-            resources: {{calendar_response.json_interviewers|safe}},
-            events: {{calendar_response.json_events|safe}},
-			height: calcCalendarHeight()
-		});
-		
-		function calcCalendarHeight() {
-			var h = $(window).height() - 40;
-			console.log(h);
-			return h;
-		}
-		
-		$(window).resize(function() {
-			$('#calendar').fullCalendar('option', 'height', calcCalendarHeight());
-		});
+        var calendars = {{calendar_response.json_events|safe}};
+
+        function draw_calendar(calendars){
+            $('#mycalendar table').remove();
+
+            var date_of_interest = new Date($("#mycalendar").attr('date'));
+            $('#mycalendar span.date-text').text(date_of_interest.toDateString());
+
+            $('#mycalendar').append($("<table><thead></thead><tbody></tbody></table>").attr("id", "calendar-table"));
+            var tr = $('#mycalendar thead').append("<tr></tr>");
+            tr.append("Interviewer");
+            for (i = {{START_HOUR}}; i < {{START_HOUR}} + {{HOURS_PER_DAY}}; i++){
+                tr.append($('<th colspan="' + {{CHUNKS_PER_HOUR}} + '">' + i + '</th>').addClass("hour-line"));
+            }
+
+            for (i = 0; i < calendars.length; i++){
+                var tr = $('#mycalendar tbody').append("<tr></tr>");
+                var calendar = calendars[i];
+
+                tr.append('<td>' + calendar.address + '</td>');
+
+                for (hour = {{START_HOUR}}; hour < {{START_HOUR}} + {{HOURS_PER_DAY}}; hour++){
+                for (chunk_of_hour = 0; chunk_of_hour < {{CHUNKS_PER_HOUR}}; chunk_of_hour++){
+                    var found_overlap = false;
+                    var date_period_start = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, chunk_of_hour * (60/{{CHUNKS_PER_HOUR}}), 0, 0 )
+                    var date_period_end = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, (chunk_of_hour + 1) * (60/{{CHUNKS_PER_HOUR}}), 0, 0 )
+                    for (k = 0; k < calendar.busy_times.length; k++){
+                        busy_time_start = new Date(calendar.busy_times[k][0]);
+                        busy_time_end = new Date(calendar.busy_times[k][1]);
+
+                        if ((date_period_start >= busy_time_start && date_period_end <= busy_time_end) || (date_period_start <= busy_time_start && date_period_end >= busy_time_end)){
+                            tr.append($("<td class='chunk-td'></td>").addClass("doesOverlap"));
+                            found_overlap = true;
+                            break;
+                        }
+                    }
+                    if (!found_overlap){
+                        tr.append("<td class='chunk-td'></td>");
+                    }
+
+                    if (chunk_of_hour == 0){
+                        tr.children().last().addClass("hour-line");
+                    }
+                    else if (chunk_of_hour % ({{CHUNKS_PER_HOUR}} / 4) == 0){
+                        tr.children().last().addClass("quarter-hour-line");
+                    }
+                }
+                }
+            }
+
+        }
+
+        var current_date = new Date("{{START_DATE}}");
+        $('#mycalendar').attr('date', current_date.toJSON());
+
+        $('.ui-icon-circle-arrow-w').click(function() {
+
+            var current_date = new Date($("#mycalendar").attr('date'));
+            var new_date = new Date(current_date.getTime() - (24 * 60 * 60 * 1000));
+            $('#mycalendar').attr('date', new_date.toJSON());
+            draw_calendar(calendars);
+        });
+
+        $('.ui-icon-circle-arrow-e').click(function() {
+            var current_date = new Date($("#mycalendar").attr('date'));
+            var new_date = new Date(current_date.getTime() + (24 * 60 * 60 * 1000));
+            $('#mycalendar').attr('date', new_date.toJSON());
+            draw_calendar(calendars);
+        });
+
+        draw_calendar(calendars);
     });
     {% endif %}
 
 </script>
 <style type='text/css'>
 
-	#calendar {
+	#mycalendar {
+        margin-top: 20px;
 		width: 100%;
-		}
+        margin-bottom: 20px;
+    }
+
+    #mycalendar .doesOverlap {
+        background-color: #FF0000;
+    }
+
+    .chunk-td {
+        width: 6px;
+        margin: 0px;
+        border: 0px;
+    }
+
+    .hour-line {
+        border-left-style: solid;
+        border-left-width: 1px;
+        text-align: left;
+    }
+
+    .quarter-hour-line {
+        border-left-style: dotted;
+        border-left-width: 1px;
+
+    }
+
+    #calendar-table {
+        border-style: solid;
+        border-width: 1px;
+    }
+
+    .ui-icon {
+        display: inline-block;
+    }
 
 </style>
 </head>
@@ -65,8 +144,15 @@
     <input type="submit" value="Submit"/>
 </form>
 
-<div id="calendar"></div>
 <div id='contextMenuContainer' style='background-color:#f0f0f0;width:100px;height:100px;display:none;z-index:999;border-radius:5px;border:1px solid black;position:absolute;'></div>
+
+{% if calendar_response %} 
+<div id="mycalendar" date="">
+    <span class="ui-icon ui-icon-circle-arrow-w"></span>
+    <span class="ui-icon ui-icon-circle-arrow-e"></span>
+    <span class="date-text"></span>
+</div>
+{% endif %}
 
 {% if calendar_response %} 
 {% for interview_calendar in calendar_response.interview_calendars %} 
