@@ -8,8 +8,9 @@ import pytz
 from caltech import settings
 from jeeves import models
 from jeeves import views
-from jeeves.calendar.client import calendar_client
-from jeeves.calendar.lib import TimePeriod
+from jeeves.calendar import schedule_calculator
+from jeeves.calendar import lib
+from jeeves.calendar import client
 
 DATEPICKER_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -176,26 +177,84 @@ class CalendarClientTestCase(BaseTestCase):
 
     def setUp(self):
         super(CalendarClientTestCase, self).setUp()
-        self.calendar_client = calendar_client
+        self.calendar_client = client.calendar_client
         now = datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(pytz.timezone(settings.TIME_ZONE)).replace(second=0, microsecond=0)
         tomorrow = now + timedelta(days=1)
-        self.time_period = TimePeriod(now, tomorrow)
+        self.time_period = lib.TimePeriod(now, tomorrow)
 
     def test_one_interviewer(self):
-        calendar_response = calendar_client.get_calendars([self.captain], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
     def test_two_interviewers(self):
-        calendar_response = calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 2)
         self.assertEqual([self.captain, self.first_mate], [ic.interviewer for ic in calendar_response.interview_calendars])
 
     def test_time_bounds(self):
-        calendar_response = calendar_client.get_calendars([self.captain], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
         busy_times = calendar_response.interview_calendars[0].busy_times
         self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
 
+class SchedulerTestCase(BaseTestCase):
+
+    def setUp(self):
+        super(SchedulerTestCase, self).setUp()
+        now = datetime(2012, 9, 27, 15, 0).replace(tzinfo=pytz.utc).astimezone(pytz.timezone(settings.TIME_ZONE)).replace(second=0, microsecond=0)
+        later = now + timedelta(hours=4)
+        self.time_period = lib.TimePeriod(now, later)
+        self.fifteen_minutes = lib.TimePeriod(self.time_period.start_time, self.time_period.start_time + timedelta(minutes=15))
+
+        self.default_break = lib.time_period_of_length_after_time(self.time_period.start_time, 75, 0)
+
+        self.test_service_client = client.TestServiceClient()
+        self.test_service_client.register_busyness(self.captain.address, self.fifteen_minutes.shift_minutes(60))
+        self.test_service_client.register_busyness(self.captain.address, self.fifteen_minutes.shift_minutes(75))
+        self.test_service_client.register_busyness(self.captain.address, self.fifteen_minutes.shift_minutes(90))
+        self.test_service_client.register_busyness(self.captain.address, self.fifteen_minutes.shift_minutes(105))
+
+        self.calendar_client = client.Client(self.test_service_client)
+
+    def test_possible(self):
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.captain.name])
+        schedules = schedule_calculator.calculate_schedules(
+                required_interviewers,
+                optional_interviewers,
+                2,
+                self.time_period,
+                possible_break=self.default_break,
+        )
+
+        self.assertEqual(len(schedules), 1)
+
+    def test_break_before_and_after(self):
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
+
+        schedules = schedule_calculator.calculate_schedules(
+                required_interviewers,
+                optional_interviewers,
+                1,
+                self.time_period,
+                possible_break=self.default_break.shift_minutes(45),
+        )
+
+        self.assertEqual(len(schedules), 2)
+
+    def test_no_break(self):
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
+
+        schedules = schedule_calculator.calculate_schedules(
+                required_interviewers,
+                optional_interviewers,
+                1,
+                self.time_period,
+        )
+
+        self.assertEqual(len(schedules), 13)

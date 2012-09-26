@@ -18,6 +18,20 @@ class TimePeriod(object):
     def __repr__(self):
         return "(%s, %s)" % (self.start_time, self.end_time)
 
+    @property
+    def length_in_minutes(self):
+        return (self.end_time - self.start_time).seconds / 60
+
+    def shift_minutes(self, num_minutes):
+        return TimePeriod(self.start_time + timedelta(minutes=num_minutes), self.end_time + timedelta(minutes=num_minutes))
+
+    def contains(self, time_period):
+        return bool(self.start_time <= time_period.start_time and self.end_time >= time_period.end_time)
+
+
+def time_period_of_length_after_time(input_time, period_length, num_periods):
+    start_time = input_time + timedelta(minutes=num_periods * period_length)
+    return TimePeriod(start_time, start_time + timedelta(minutes=period_length))
 
 # TODO: time_lib?
 def format_datetime_utc(dt):
@@ -66,9 +80,14 @@ def calculate_free_times(busy_times, start_time, end_time):
 
     # Turn busy times into free times
     free_times = []
-    for chunk1, chunk2 in pairwise(collapsed_busy_times):
-        if chunk1[0] == start_time or chunk2[1] == end_time:
+    for busy_time in busy_times:
+        if busy_time[0] <= start_time:
+            start_time = busy_time[1]
             continue
 
-        free_times.append((chunk1[1], chunk2[0]))
+        free_times.append((start_time, busy_time[0]))
+        start_time = busy_time[1]
+    if start_time < end_time:
+        free_times.append((start_time, end_time))
+
     return free_times

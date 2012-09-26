@@ -50,6 +50,12 @@ class InterviewCalendar(object):
                 )
         ]
 
+    def has_availability_during(self, time_period):
+        for free_time in self.free_times:
+            if free_time.contains(time_period):
+                return True
+        return False
+
 
 class CalendarResponse(object):
 
@@ -78,11 +84,25 @@ class CalendarResponse(object):
         ]
         return json.dumps(sorted(serialized_calendars, key=lambda x: x.get('address')), cls=DjangoJSONEncoder)
 
+    def winnow_by_interviewers(self, interviewers):
+        selected = []
+        not_selected = []
+        for interview_calendar in self.interview_calendars:
+            if interview_calendar.interviewer.name in interviewers:
+                selected.append(interview_calendar)
+            else:
+                not_selected.append(interview_calendar)
+        assert set([interview_calendar.interviewer.name for interview_calendar in selected]) == set(interviewers), "Couldn't find all required interviewers"
+        return selected, not_selected
+
 
 class Client(object):
 
-    def __init__(self):
-        if secret.use_mock:
+    def __init__(self, service_client=None):
+        if service_client is not None:
+            self._service_client = service_client
+
+        elif secret.use_mock:
             self._service_client = MockServiceClient()
         else:
             self._service_client = ServiceClient(schedule.build_service())
@@ -115,6 +135,32 @@ class MockServiceClient(object):
 
             current_time = new_time
 
+        return dict(busy=busy_times)
+
+class TestServiceClient(object):
+
+    def __init__(self):
+        self.busyness = dict()
+
+    def register_busyness(self, interviewer, time_period):
+        self.busyness.setdefault(interviewer, []).append(time_period)
+
+    def process_calendar_query(self, calendar_query):
+        mock_service_response = dict(
+                calendars=dict(
+                    (interviewer.address, self._regurgitate_registered_busyness(interviewer.address, calendar_query.time_period))
+                    for interviewer in calendar_query.interviewers
+                )
+        )
+        return CalendarResponse(
+                calendar_query,
+                mock_service_response,
+        )
+
+    def _regurgitate_registered_busyness(self, interviewer, time_period):
+        busy_times = [dict(start=lib.format_datetime_utc(busy_time.start_time), end=lib.format_datetime_utc(busy_time.end_time))
+            for busy_time in self.busyness.get(interviewer, [])
+        ]
         return dict(busy=busy_times)
 
 
