@@ -9,9 +9,6 @@ MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
 
 def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=20):
-    # Schedule people with less availability first
-    required_interviewers = sorted(required_interviewers, key=lambda interviewer: len(interviewer.free_times), reverse=True)
-
     num_attempts = 0
     possible_schedules = []
     for possible_required_order in possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
@@ -19,7 +16,8 @@ def calculate_schedules(required_interviewers, optional_interviewers, num_interv
         if is_valid_schedule(possible_schedule) and possible_schedule not in possible_schedules:
             possible_schedules.append(possible_schedule)
         num_attempts += 1
-        if num_attempts > 1000 or len(possible_schedules) > max_schedules:
+        if num_attempts > 100000 or len(possible_schedules) > max_schedules:
+            print "exiting %s %s" % (num_attempts, len(possible_schedules))
             break
 
     return possible_schedules
@@ -45,7 +43,7 @@ def possible_orders(required_interviewers, optional_interviewers, num_interviewe
 
                 # only try breaks in the first two interview slots
                 for i in xrange(2):
-                    order_with_break = list(possible_order)
+                    order_with_break = list(mutable_order)
                     order_with_break.insert(i, break_interview_slot)
                     validated_order = try_order_with_anchor(order_with_break, anchor_index=i)
                     if validated_order is not None:

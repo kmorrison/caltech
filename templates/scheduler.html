@@ -21,7 +21,24 @@
 </form>
 </div>
 
-{% if valid_submission %}
-<h2>YAY</h2>
+{% if schedules %}
+<h2>Possible Schedules</h2>
+<ul>
+    {% for schedule in schedules %}
+    <li>
+    <table>
+        {% for interview_slot in schedule %}
+        <tr>
+            <td class="schedule-interview-name">{{interview_slot.interviewer}}</td>
+            <td class="schedule-interview-time">{{interview_slot.start_time}}</td>
+            <td class="schedule-interview-time">{{interview_slot.end_time}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+        
+    </li>
+    {% endfor %}
+</ul>
 {% endif %}
+
 {% endblock %}

@@ -8,6 +8,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from jeeves import models
+from jeeves.calendar import schedule_calculator
 from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
 
@@ -66,10 +67,16 @@ class FindTimesForm(forms.Form):
 
 class SuggestScheduleForm(FindTimesForm):
 
-    number_of_interviewers = forms.ChoiceField((i, i) for i in xrange(1, 10))
+    number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
 
     break_start_time = forms.DateTimeField(required=False)
     break_end_time = forms.DateTimeField(required=False)
+
+    @property
+    def possible_break(self):
+        if self.cleaned_data['break_start_time'] is None or  self.cleaned_data['break_end_time'] is None:
+            return None
+        return TimePeriod(self.cleaned_data['break_start_time'], self.cleaned_data['break_end_time'])
 
 
 def index(request):
@@ -132,6 +139,14 @@ def scheduler_post(request):
         )
 
         calendar_response = calendar_client.get_calendars(interviewers, scheduler_form.time_period)
+        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([interviewer.name for interviewer in scheduler_form.cleaned_data['also_include']])
+        schedules = schedule_calculator.calculate_schedules(
+                required_interviewers,
+                optional_interviewers,
+                scheduler_form.cleaned_data['number_of_interviewers'],
+                time_period=scheduler_form.time_period,
+                possible_break=scheduler_form.possible_break,
+        )
 
     return render(
             request,
@@ -139,5 +154,6 @@ def scheduler_post(request):
             dict(
                 scheduler_form=scheduler_form,
                 valid_submission=valid_submission,
+                schedules=schedules,
             )
     )

@@ -66,3 +66,7 @@ a.header-index-link {
 .displayInline {
     display: inline-block;
 }
+
+.schedule-interview-name {
+    margin-right: 15px;
+}
