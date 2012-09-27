@@ -40,8 +40,8 @@ def get_interviewers(requisition, also_include=None, dont_include=None):
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs())
 
-    start_time = forms.DateTimeField()
-    end_time = forms.DateTimeField()
+    start_time = forms.DateTimeField(label='Availability Start Time')
+    end_time = forms.DateTimeField(label='Availability End Time')
 
     also_include = forms.ModelMultipleChoiceField(
             queryset=all_interviewers(),
@@ -69,8 +69,8 @@ class SuggestScheduleForm(FindTimesForm):
 
     number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
 
-    break_start_time = forms.DateTimeField(required=False)
-    break_end_time = forms.DateTimeField(required=False)
+    break_start_time = forms.DateTimeField(required=False, label='Break Start Time (optional)')
+    break_end_time = forms.DateTimeField(required=False, label='Break End Time (optional)')
 
     @property
     def possible_break(self):
