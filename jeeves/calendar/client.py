@@ -8,18 +8,24 @@ from caltech import secret
 from . import schedule
 from . import lib
 
+MAX_INTERVIEWERS_IN_QUERY = 20
+
 class CalendarQuery(object):
 
-    def __init__(self, interviewers, time_period):
-        self.interviewers = interviewers
+    def __init__(self, required_interviewers, optional_interviewers, time_period):
+        self.interviewers = list(required_interviewers) + random.sample(
+                optional_interviewers,
+                min(MAX_INTERVIEWERS_IN_QUERY - len(required_interviewers), len(optional_interviewers))
+        )
         self.time_period = time_period
 
-    def to_query_body(self):
+    def to_query_body(self, force_all_interviewers=False):
         return dict(
                 timeMin=lib.format_datetime_utc(self.time_period.start_time),
                 timeMax=lib.format_datetime_utc(self.time_period.end_time),
                 items=[dict(id=interviewer.address) for interviewer in self.interviewers],
         )
+
 
 class InterviewCalendar(object):
 
@@ -107,8 +113,8 @@ class Client(object):
         else:
             self._service_client = ServiceClient(schedule.build_service())
 
-    def get_calendars(self, interviewers, time_period):
-        return self._service_client.process_calendar_query(CalendarQuery(interviewers, time_period))
+    def get_calendars(self, required_interviewers, optional_interviewers, time_period):
+        return self._service_client.process_calendar_query(CalendarQuery(required_interviewers, optional_interviewers, time_period))
 
 class MockServiceClient(object):
 

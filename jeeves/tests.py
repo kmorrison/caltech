@@ -139,38 +139,38 @@ class GetInterviewersTestCase(BaseTestCase):
 
     def test_get_interviewers(self):
         self.assertEqual(
-                set((self.captain, self.first_mate)),
-                set(views.get_interviewers(self.req)),
+                (set(), set((self.captain, self.first_mate))),
+                views.get_interviewers(self.req),
         )
 
     def test_include(self):
         self.assertEqual(
-                set((self.captain, self.first_mate, self.pilot)),
-                set(views.get_interviewers(self.req, also_include=[self.pilot])),
+                (set((self.pilot,)), set((self.captain, self.first_mate))),
+                views.get_interviewers(self.req, also_include=[self.pilot]),
         )
 
     def test_exclude(self):
         self.assertEqual(
-                set((self.captain,)),
-                set(views.get_interviewers(self.req, dont_include=[self.first_mate])),
+                (set(), set((self.captain,))),
+                views.get_interviewers(self.req, dont_include=[self.first_mate]),
         )
 
     def test_include_already_in(self):
         self.assertEqual(
-                [self.captain, self.first_mate],
-                list(views.get_interviewers(self.req, also_include=[self.first_mate])),
+                (set((self.first_mate,)), set((self.captain,))),
+                views.get_interviewers(self.req, also_include=[self.first_mate]),
         )
 
     def test_exclude_non_existent(self):
         self.assertEqual(
-                set((self.captain, self.first_mate)),
-                set(views.get_interviewers(self.req, dont_include=[self.pilot])),
+                (set(), set((self.captain, self.first_mate))),
+                views.get_interviewers(self.req, dont_include=[self.pilot]),
         )
 
-    def test_exclude_trumps_include(self):
+    def test_exclude_doesnt_trump_include(self):
         self.assertEqual(
-                set((self.captain, self.first_mate)),
-                set(views.get_interviewers(self.req, also_include=[self.pilot], dont_include=[self.pilot])),
+                (set((self.pilot,)), set((self.captain, self.first_mate))),
+                views.get_interviewers(self.req, also_include=[self.pilot], dont_include=[self.pilot]),
         )
 
 class CalendarClientTestCase(BaseTestCase):
@@ -183,17 +183,17 @@ class CalendarClientTestCase(BaseTestCase):
         self.time_period = lib.TimePeriod(now, tomorrow)
 
     def test_one_interviewer(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], [], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
     def test_two_interviewers(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 2)
         self.assertEqual([self.captain, self.first_mate], [ic.interviewer for ic in calendar_response.interview_calendars])
 
     def test_time_bounds(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], [], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
@@ -220,7 +220,7 @@ class SchedulerTestCase(BaseTestCase):
         self.calendar_client = client.Client(self.test_service_client)
 
     def test_possible(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
         required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.captain.name])
         schedules = schedule_calculator.calculate_schedules(
                 required_interviewers,
@@ -233,7 +233,7 @@ class SchedulerTestCase(BaseTestCase):
         self.assertEqual(len(schedules), 1)
 
     def test_break_before_and_after(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
         required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
 
         schedules = schedule_calculator.calculate_schedules(
@@ -247,7 +247,7 @@ class SchedulerTestCase(BaseTestCase):
         self.assertEqual(len(schedules), 2)
 
     def test_no_break(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
         required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
 
         schedules = schedule_calculator.calculate_schedules(

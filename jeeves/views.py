@@ -28,14 +28,15 @@ def all_interviewers():
 def get_interviewers(requisition, also_include=None, dont_include=None):
     requisition = models.Requisition.objects.get(id=requisition.id)
     interviewers = set(requisition.interviewers.all())
+    required_interviewers = set()
 
     if also_include is not None:
-        interviewers.update(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
+        required_interviewers.update(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
 
     if dont_include is not None:
         interviewers -= set(models.Interviewer.objects.filter(id__in=[i.id for i in dont_include]))
 
-    return interviewers
+    return required_interviewers, interviewers - required_interviewers
 
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs())
@@ -97,11 +98,11 @@ def find_times(request):
 def find_times_post(request):
     find_times_form = FindTimesForm(request.POST)
     if find_times_form.is_valid():
-        interviewers = get_interviewers(
+        required_interviewers, optional_interviewers = get_interviewers(
                 *find_times_form.requisition_and_custom_interviewers
         )
 
-        calendar_response = calendar_client.get_calendars(interviewers, find_times_form.time_period)
+        calendar_response = calendar_client.get_calendars(required_interviewers, optional_interviewers, find_times_form.time_period)
 
         return render(
                 request,
@@ -134,11 +135,11 @@ def scheduler_post(request):
     scheduler_form = SuggestScheduleForm(request.POST)
     valid_submission = scheduler_form.is_valid()
     if scheduler_form.is_valid():
-        interviewers = get_interviewers(
+        required_interviewers, optional_interviewers = get_interviewers(
                 *scheduler_form.requisition_and_custom_interviewers
         )
 
-        calendar_response = calendar_client.get_calendars(interviewers, scheduler_form.time_period)
+        calendar_response = calendar_client.get_calendars(required_interviewers, optional_interviewers, scheduler_form.time_period)
         required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([interviewer.name for interviewer in scheduler_form.cleaned_data['also_include']])
         schedules = schedule_calculator.calculate_schedules(
                 required_interviewers,
