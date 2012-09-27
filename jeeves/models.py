@@ -25,6 +25,10 @@ class Requisition(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        ordering = ('name',)
+
+
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
 
