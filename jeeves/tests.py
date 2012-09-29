@@ -258,3 +258,32 @@ class SchedulerTestCase(BaseTestCase):
         )
 
         self.assertEqual(len(schedules), 13)
+
+class LibraryTestCase(BaseTestCase):
+    
+    def setUp(self):
+        now = datetime.now()
+        later = now + timedelta(minutes=10)
+        later2 = now + timedelta(minutes=15)
+        later3 = now + timedelta(minutes=45)
+        later4 = now + timedelta(minutes=60)
+        later5 = now + timedelta(minutes=90)
+        
+        self.times = [(now, later), (now, later2), (later, later3), (later4, later5)]    
+    
+    def test_identity(self):        
+        self.assertEqual(self.times[:1], lib.collapse_times(self.times[:1]))
+        
+    def test_collapse_overlap(self):
+        """  [(now, later2)] """
+        self.assertEqual(
+            [(self.times[0][0], self.times[1][1])], 
+            lib.collapse_times(self.times[:2])
+        )
+        
+    def test_collapse_gap(self):
+        """  [(now, later2)] """
+        self.assertEqual(
+            [(self.times[0][0], self.times[2][1]), (self.times[3][0], self.times[3][1])],
+            lib.collapse_times(self.times)
+        )
