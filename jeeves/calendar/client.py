@@ -182,4 +182,5 @@ class ServiceClient(object):
         )
 
 
+# Define a module level client that people can import
 calendar_client = Client()
