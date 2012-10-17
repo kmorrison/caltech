@@ -99,7 +99,14 @@ def possible_interview_chunks(free_times):
     for free_time in free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
-            yield potential_time
+            
+            # Only schedule interviews at minute multiples of the scan
+            # resolution. IE., if the resolution is 15 minutes, only consider
+            # interviews at 11:00, 11:15, 11:30
+            if potential_time.end_time.minute % SCAN_RESOLUTION == 0:
+                assert potential_time.start_time.minute % SCAN_RESOLUTION == 0
+                yield potential_time
+
             potential_time = lib.TimePeriod(
                     potential_time.start_time + timedelta(minutes=SCAN_RESOLUTION),
                     potential_time.end_time + timedelta(minutes=SCAN_RESOLUTION),
