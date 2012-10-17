@@ -85,10 +85,11 @@ class CalendarResponse(object):
                 dict(
                     address=interview_calendar.interviewer.address,
                     busy_times=[(busy_period.start_time, busy_period.end_time) for busy_period in interview_calendar.busy_times],
+                    display_name=interview_calendar.interviewer.display_name,
                 )
                 for interview_calendar in self.interview_calendars
         ]
-        return json.dumps(sorted(serialized_calendars, key=lambda x: x.get('address')), cls=DjangoJSONEncoder)
+        return json.dumps(sorted(serialized_calendars, key=lambda x: x.get('display_name')), cls=DjangoJSONEncoder)
 
     def winnow_by_interviewers(self, interviewers):
         selected = []

@@ -22,7 +22,7 @@
                 var tr = $('#mycalendar tbody').append("<tr></tr>");
                 var calendar = calendars[i];
 
-                tr.append('<td>' + calendar.address + '</td>');
+                tr.append('<td>' + calendar.display_name + '</td>');
 
                 for (hour = {{START_HOUR}}; hour < {{START_HOUR}} + {{HOURS_PER_DAY}}; hour++){
                 for (chunk_of_hour = 0; chunk_of_hour < {{CHUNKS_PER_HOUR}}; chunk_of_hour++){
