@@ -41,7 +41,7 @@ def get_interviewers(requisition, also_include=None, dont_include=None):
     return required_interviewers, interviewers - required_interviewers
 
 class FindTimesForm(forms.Form):
-    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id') or 1)
+    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
 
     start_time = forms.DateTimeField(label='Availability Start Time')
     end_time = forms.DateTimeField(label='Availability End Time')
