@@ -12,6 +12,8 @@ from jeeves.calendar import schedule_calculator
 from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
 
+from caltech import secret
+
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 START_HOUR = 8
@@ -39,7 +41,7 @@ def get_interviewers(requisition, also_include=None, dont_include=None):
     return required_interviewers, interviewers - required_interviewers
 
 class FindTimesForm(forms.Form):
-    requisition = forms.ModelChoiceField(queryset=all_reqs())
+    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id') or 1)
 
     start_time = forms.DateTimeField(label='Availability Start Time')
     end_time = forms.DateTimeField(label='Availability End Time')
