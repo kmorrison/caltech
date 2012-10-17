@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!doctype HTML5>
 <html>
 <head>
 <link type="text/css" href="/static/css/smoothness/jquery-ui-1.8.23.custom.css" rel="stylesheet" />
@@ -31,10 +31,34 @@
 {% block header_includes %}{% endblock %}
 </head>
 <body>
-    <a class="header-link" href="/index">Home</a>
-    <a class="header-link" href="/find_times">Find Times</a>
-    <a class="header-link" href="/scheduler">Suggest Schedules</a>
-    <a class="header-link" href="/admin">Manage</a>
-    {% block body %}{% endblock %}
+	<div id="header-container">
+		<header class="wrapper clearfix">
+		    <a href="/index"><h1 id="title">
+				How May I Help You?
+			</h1></a>
+			<nav>
+				<ul>
+					<li> <a href="/find_times">Find Times</a></li>
+					<li> <a href="/scheduler">Scheduler</a></li>
+					<li id="admin"> <a href="/admin" target="_blank">Admin</a> </li>
+				</ul>
+			</nav>
+		</header>
+	</div> <!-- #header-container -->
+    
+    <div id="main-container">
+		<div id="main" class="wrapper clearfix">
+			<article>
+	 		  	{% block body %}
+	    		{% endblock %}
+			</article>
+		</div> <!-- #main -->
+	</div> <!-- #main-container -->
+
+ 	<!--<div id="footer-container">
+		<footer class="wrapper">
+			<p><3 Verekia</p>
+		</footer>
+	</div> --> <!-- #footer-container --> 
 </body>
 </html>
