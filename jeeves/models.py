@@ -5,16 +5,17 @@ class Interviewer(models.Model):
 
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
+    display_name = models.CharField(max_length=256)
 
     def __unicode__(self):
-        return self.name
+        return self.display_name
 
     @property
     def address(self):
         return "%s@%s" % (self.name, self.domain)
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('display_name',)
 
 
 class Requisition(models.Model):
