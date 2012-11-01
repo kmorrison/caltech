@@ -3,29 +3,50 @@ import collections
 import itertools
 import random
 
+from caltech import secret
+from jeeves import models
 from jeeves.calendar import lib
+from jeeves.calendar.client import calendar_client
 
 MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
 
 def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=20):
     num_attempts = 0
-    possible_schedules = []
-    for possible_required_order in possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
-        # Generate a bunch an order, if it's valid add it to the list
-        possible_schedule = possible_required_order
-        if is_valid_schedule(possible_schedule) and possible_schedule not in possible_schedules:
-            possible_schedules.append(possible_schedule)
+    accepted_schedules = []
+    rooms = get_all_rooms(time_period)
+
+    for possible_schedule in possible_schedules(
+        required_interviewers, 
+        optional_interviewers, 
+        num_interviewers_needed, 
+        time_period, 
+        possible_break, 
+        max_schedules
+    ):
+
+        # Add the schedule if it meets our validity heuristics
+        if (is_valid_schedule(possible_schedule, rooms) 
+        and possible_schedule not in accepted_schedules):
+            accepted_schedules.append(possible_schedule)
+
         num_attempts += 1
-        if num_attempts > 100000 or len(possible_schedules) > max_schedules:
-            print "exiting %s %s" % (num_attempts, len(possible_schedules))
+        if num_attempts > 100000 or len(accepted_schedules) > max_schedules:
+            print "exiting %s %s" % (num_attempts, len(accepted_schedules))
             break
 
-    return possible_schedules
+    return accepted_schedules
 
 InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
 
-def possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+def get_all_rooms(time_period):
+    room_id = getattr(secret, 'room_id', None)
+    if room_id is None:
+        return None
+    all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
+    return calendar_client.get_calendars([], all_rooms, time_period).interview_calendars
+
+def possible_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
     """A generator to generate a bunch of valid orders of interviewers whose times work.
 
     Does not take into account rooms, time padding, or previously generated interviews.
@@ -97,11 +118,27 @@ def try_order_with_anchor(possible_order, anchor_index):
     return interview_slots
 
 
-def is_valid_schedule(possible_schedule):
+def is_valid_schedule(possible_schedule, rooms):
     if possible_schedule is None:
         return False
 
-    # TODO: More checking
+    if rooms is not None:
+        # If we're looking at rooms, find one that fits and insert it into the schedule
+        interview_duration = lib.TimePeriod(
+            possible_schedule[0].start_time, 
+            possible_schedule[-1].end_time
+        )
+        possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
+        if not possible_rooms:
+            return False
+
+        # Choose a valid room randomly to avoid scheduling the same room always
+        # because of arbitrary db ordering
+        possible_schedule.append(InterviewSlot(
+            random.choice(possible_rooms).interviewer.display_name, 
+            interview_duration.start_time, 
+            interview_duration.end_time
+        ))
 
     return True
 
