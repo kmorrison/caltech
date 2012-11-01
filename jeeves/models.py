@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib import admin
 
+from datetime import datetime
+
+
 class Interviewer(models.Model):
 
     name = models.CharField(max_length=256)
@@ -29,6 +32,31 @@ class Requisition(models.Model):
     class Meta:
         ordering = ('name',)
 
+DAYS_OF_WEEK = (
+    ('0', 'Monday'),
+    ('1', 'Tuesday'),
+    ('2', 'Wednesday'),
+    ('3', 'Thursday'),
+    ('4', 'Friday'),
+    ('5', 'Saturday'),
+    ('6', 'Sunday'),
+)
+
+class Preference(models.Model):
+
+    interviewer = models.ForeignKey('Interviewer')
+
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    day = models.CharField(max_length=1, choices=DAYS_OF_WEEK)
+
+    def time_period(self, date):
+        from jeeves.calendar import lib
+        preference_start_time = datetime(date.year, date.month, date.day, self.start_time.hour, self.start_time.minute)
+        preference_end_time = datetime(date.year, date.month, date.day, self.end_time.hour, self.end_time.minute)
+        return lib.TimePeriod(preference_start_time, preference_end_time)
+
 
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
@@ -42,3 +70,4 @@ class RequisitionAdmin(admin.ModelAdmin):
 
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
+admin.site.register(Preference)
