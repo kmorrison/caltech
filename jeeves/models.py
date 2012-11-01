@@ -51,6 +51,9 @@ class Preference(models.Model):
 
     day = models.CharField(max_length=1, choices=DAYS_OF_WEEK)
 
+    def __unicode__(self):
+        return "%s: %s %s-%s" % (self.interviewer.display_name, self.get_day_display(), self.start_time, self.end_time)
+
     def time_period(self, date):
         from jeeves.calendar import lib
         preference_start_time = datetime(date.year, date.month, date.day, self.start_time.hour, self.start_time.minute)
@@ -61,13 +64,19 @@ class Preference(models.Model):
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
 
+class PreferenceInline(admin.TabularInline):
+    model = Preference
+
 class InterviewerAdmin(admin.ModelAdmin):
-    inlines = [RequisitionInline]
+    inlines = [RequisitionInline, PreferenceInline]
 
 class RequisitionAdmin(admin.ModelAdmin):
     inlines = [RequisitionInline]
     exclude = ('interviewers',)
 
+class PreferenceAdmin(admin.ModelAdmin):
+    list_display = ['interviewer']
+
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
-admin.site.register(Preference)
+admin.site.register(Preference, PreferenceAdmin)
