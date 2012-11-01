@@ -12,6 +12,7 @@ def calculate_schedules(required_interviewers, optional_interviewers, num_interv
     num_attempts = 0
     possible_schedules = []
     for possible_required_order in possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+        # Generate a bunch an order, if it's valid add it to the list
         possible_schedule = possible_required_order
         if is_valid_schedule(possible_schedule) and possible_schedule not in possible_schedules:
             possible_schedules.append(possible_schedule)
@@ -25,17 +26,24 @@ def calculate_schedules(required_interviewers, optional_interviewers, num_interv
 InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
 
 def possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+    """A generator to generate a bunch of valid orders of interviewers whose times work.
+
+    Does not take into account rooms, time padding, or previously generated interviews.
+    """
     num_required = len(required_interviewers)
     assert num_required <= num_interviewers_needed, "Cannot require %s interviewers for only %s interviews" % (num_required, num_interviewers_needed)
     interviewer_pool = required_interviewers + [None for _ in xrange(num_interviewers_needed - num_required)]
+    # Start with a random assortment of the required interviewers and empty space
     random.shuffle(interviewer_pool)
 
     for possible_order in itertools.permutations(interviewer_pool):
         for _ in xrange(1000):
+            # For a random permutation of the required/empty set, sample some optional interviewers and try them out
             mutable_order = list(possible_order)
             chosen_optional = random.sample(optional_interviewers, num_interviewers_needed - num_required)
             none_indices = [i for i, element in enumerate(possible_order) if element is None]
             for replace_index, optional_interviewer in zip(none_indices, chosen_optional):
+                # Fill in optional ones into space
                 mutable_order[replace_index] = optional_interviewer
 
             if possible_break is not None:
@@ -60,6 +68,10 @@ def possible_orders(required_interviewers, optional_interviewers, num_interviewe
 
 
 def try_order_with_anchor(possible_order, anchor_index):
+    """Given a random order with an anchor that his its times filled already, see if the rest of the times would make sense.
+
+    Replace interviewers in the possible order with InterviewSlots, which are interviewers with associated times.
+    """
     interview_slots = []
     anchor = possible_order[anchor_index]
     for position, interviewer in enumerate(possible_order):
@@ -78,9 +90,10 @@ def try_order_with_anchor(possible_order, anchor_index):
             required_slot = lib.time_period_of_length_after_time(anchor.end_time, MINUTES_OF_INTERVIEW, position - anchor_index - 1)
 
         if not interviewer.has_availability_during(required_slot):
-            interview_slots = None
-            break
+            # This order won't work, return it as invalid
+            return None
         interview_slots.append(InterviewSlot(interviewer.interviewer.address, required_slot.start_time, required_slot.end_time))
+        
     return interview_slots
 
 
@@ -94,6 +107,7 @@ def is_valid_schedule(possible_schedule):
 
 
 def possible_interview_chunks(free_times):
+    """Given a list of free times, yield them in 45 minute chunks."""
     possible_free_times = filter_free_times_for_length(free_times)
 
     for free_time in free_times:
@@ -113,4 +127,5 @@ def possible_interview_chunks(free_times):
             )
 
 def filter_free_times_for_length(free_times):
+    """Given a list of free times, return chunks that are of the given length or greater."""
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]

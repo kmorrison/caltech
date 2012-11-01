@@ -1,7 +1,9 @@
 from datetime import timedelta
 from datetime import datetime
-import simplejson as json
 import random
+from pprint import pprint
+
+import simplejson as json
 from django.core.serializers.json import DjangoJSONEncoder
 
 from caltech import secret
@@ -66,6 +68,7 @@ class InterviewCalendar(object):
 class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
+        pprint(service_response)
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
@@ -177,9 +180,11 @@ class ServiceClient(object):
         self._service = service
 
     def process_calendar_query(self, calendar_query):
+        query_body = calendar_query.to_query_body()
+        pprint(query_body)
         return CalendarResponse(
                 calendar_query,
-                self._service.freebusy().query(body=calendar_query.to_query_body()).execute()
+                self._service.freebusy().query(body=query_body).execute()
         )
 
 
