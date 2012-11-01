@@ -1,5 +1,6 @@
 from datetime import timedelta
 import collections
+import heapq
 import itertools
 import random
 
@@ -11,33 +12,36 @@ from jeeves.calendar.client import calendar_client
 MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
 
-def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=20):
+def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=100):
     num_attempts = 0
-    accepted_schedules = []
+    created_interviews = []
     rooms = get_all_rooms(time_period)
+    preferences = get_preferences(required_interviewers + optional_interviewers)
 
     for possible_schedule in possible_schedules(
-        required_interviewers, 
-        optional_interviewers, 
-        num_interviewers_needed, 
-        time_period, 
-        possible_break, 
+        required_interviewers,
+        optional_interviewers,
+        num_interviewers_needed,
+        time_period,
+        possible_break,
         max_schedules
     ):
 
+        interview = create_interview(possible_schedule, rooms, preferences)
         # Add the schedule if it meets our validity heuristics
-        if (is_valid_schedule(possible_schedule, rooms) 
-        and possible_schedule not in accepted_schedules):
-            accepted_schedules.append(possible_schedule)
+        if (interview is not None
+        and interview not in created_interviews):
+            created_interviews.append(interview)
 
         num_attempts += 1
-        if num_attempts > 100000 or len(accepted_schedules) > max_schedules:
-            print "exiting %s %s" % (num_attempts, len(accepted_schedules))
+        if num_attempts > 100000 or len(created_interviews) > max_schedules:
+            print "exiting %s %s" % (num_attempts, len(created_interviews))
             break
 
-    return accepted_schedules
+    return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
 
 InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
+Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 
 def get_all_rooms(time_period):
     room_id = getattr(secret, 'room_id', None)
@@ -45,6 +49,14 @@ def get_all_rooms(time_period):
         return None
     all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
     return calendar_client.get_calendars([], all_rooms, time_period).interview_calendars
+
+def get_preferences(interviewers):
+    # WARNING: N DB queries
+    return dict(
+            (interviewer.interviewer.address, interviewer.interviewer.preference_set.all())
+            for interviewer in interviewers
+    )
+
 
 def possible_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
     """A generator to generate a bunch of valid orders of interviewers whose times work.
@@ -114,33 +126,57 @@ def try_order_with_anchor(possible_order, anchor_index):
             # This order won't work, return it as invalid
             return None
         interview_slots.append(InterviewSlot(interviewer.interviewer.address, required_slot.start_time, required_slot.end_time))
-        
+
     return interview_slots
 
+def calculate_preference_score(interview_slots, preferences):
+    return sum(_preference_score(interview_slot, preferences[interview_slot.interviewer]) for interview_slot in interview_slots)
 
-def is_valid_schedule(possible_schedule, rooms):
+def _preference_score(interviewer_slot, preferences):
+    if not preferences:
+        return 10
+
+    assert interviewer_slot.start_time.date() == interviewer_slot.end_time.date()
+    date = interviewer_slot.start_time.date()
+
+    for preference in preferences:
+        if preference.day != str(interviewer_slot.start_time.weekday):
+            continue
+
+        if preference.time_period(date).contains(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
+            return 10
+
+    return 0
+
+
+def create_interview(possible_schedule, rooms, preferences):
     if possible_schedule is None:
-        return False
+        return None
 
+    room = None
     if rooms is not None:
         # If we're looking at rooms, find one that fits and insert it into the schedule
         interview_duration = lib.TimePeriod(
-            possible_schedule[0].start_time, 
+            possible_schedule[0].start_time,
             possible_schedule[-1].end_time
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
         if not possible_rooms:
-            return False
+            # Short circuit, because we couldn't find a room
+            return None
+
+        preference_score = calculate_preference_score(possible_schedule, preferences)
 
         # Choose a valid room randomly to avoid scheduling the same room always
         # because of arbitrary db ordering
-        possible_schedule.append(InterviewSlot(
-            random.choice(possible_rooms).interviewer.display_name, 
-            interview_duration.start_time, 
+        room = InterviewSlot(
+            random.choice(possible_rooms).interviewer.display_name,
+            interview_duration.start_time,
             interview_duration.end_time
-        ))
+        )
 
-    return True
+    # TODO: Calculate priority based on room availability, peoples preferences, interview padding
+    return Interview(interview_slots=possible_schedule, room=room, priority=preference_score)
 
 
 def possible_interview_chunks(free_times):
@@ -150,7 +186,7 @@ def possible_interview_chunks(free_times):
     for free_time in free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
-            
+
             # Only schedule interviews at minute multiples of the scan
             # resolution. IE., if the resolution is 15 minutes, only consider
             # interviews at 11:00, 11:15, 11:30

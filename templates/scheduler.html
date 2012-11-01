@@ -28,7 +28,14 @@
     {% for schedule in schedules %}
     <li>
     <table>
-        {% for interview_slot in schedule %}
+        {% if schedule.room %}
+        <tr>
+            <td class="room-interview-name">{{schedule.room.interviewer}}</td>
+            <td class="room-interview-time">{{schedule.room.start_time}}</td>
+            <td class="room-interview-time">{{schedule.room.end_time}}</td>
+        </tr>
+        {% endif %}
+        {% for interview_slot in schedule.interview_slots %}
         <tr>
             <td class="schedule-interview-name">{{interview_slot.interviewer}}</td>
             <td class="schedule-interview-time">{{interview_slot.start_time}}</td>
