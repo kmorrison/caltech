@@ -1,14 +1,7 @@
 {% extends "base.html" %}
 
 {% block header_includes %}
-<script type="text/javascript">
-    $(function() {
-        $("#id_break_start_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-    $(function() {
-        $("#id_break_end_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-</script>
+
 {% endblock %}
 
 {% block body %}
@@ -24,12 +17,23 @@
 
 {% if schedules %}
 <h2>Possible Schedules</h2>
-<ul>
+
+
+<ul class="possible_sched">
     {% for schedule in schedules %}
-    <li>
-    <table>
-        {% for interview_slot in schedule %}
-        <tr>
+    <li class="possible_sched">
+
+    
+
+		{% for interview_slot in schedule %}
+
+	<table class="possible_sched_header">
+		<tr>
+			<td class="possible_sched_header">{{interview_slot.start_time.date}}</td>
+		</tr>
+	</table>
+	<table class="possible_sched">
+        <tr class="possible_sched">
             <td class="schedule-interview-name">{{interview_slot.interviewer}}</td>
             <td class="schedule-interview-time">{{interview_slot.start_time}}</td>
             <td class="schedule-interview-time">{{interview_slot.end_time}}</td>
@@ -40,6 +44,8 @@
     </li>
     {% endfor %}
 </ul>
+
+
 {% endif %}
 
 {% endblock %}

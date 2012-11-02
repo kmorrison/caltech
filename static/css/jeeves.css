@@ -1,5 +1,5 @@
 html, body{
-	font: #5E2612
+	color: #8B8378;
 	height: 100%;
 }
 
@@ -9,6 +9,7 @@ body {font:16px/26px 'RalewayThin', Arial, sans-serif;
 	background-repeat: repeat
 }
 
+
 #header-container {
 	height: 8em;
 	background: #8B8378;
@@ -17,11 +18,12 @@ body {font:16px/26px 'RalewayThin', Arial, sans-serif;
 	-webkit-box-shadow:0 5px 10px #aaa;
 	-moz-box-shadow:0 5px 10px #aaa;
 	box-shadow:0 5px 10px #aaa;
-	border-bottom: 1em solid #4CC552; 
+	border-bottom: 1em solid #daf3ed; 
 }
 
 #header-container a{
 	text-decoration:none;
+	color: #8B8378;
 }
 
 #title{ color:white; font:'Lobster1.1Regular', Arial, sans-serif; }
@@ -33,13 +35,14 @@ body {font:16px/26px 'RalewayThin', Arial, sans-serif;
 	}
 
 nav ul, nav ol { list-style: none; list-style-image: none; margin: 0; padding: 0;}
+	
 
-nav li:first-child a{ margin-left:0;  }
+nav li:first-child a{ margin-left:0; }
 	nav li:last-child  a{ margin-right:0; }
 
 #admin a{
 	background: white;
-	color: #4CC552;
+	color: #8B8378;
 }
 
 h1 {
@@ -47,7 +50,7 @@ h1 {
 }
 
 #main-container {
-	width: 62%;
+	width: 100%;
 	height: 90%;
 }
 
@@ -57,36 +60,78 @@ h1 {
     margin-left: 33%;
 }
 
+/* the calendar results after a request */
+
 #mycalendar {
     margin-top: 20px;
-    width: 100%;
+	width: 100%; 
     margin-bottom: 20px;
 }
 
+
 #mycalendar .doesOverlap {
-    background-color: #FF0000;
+    background-color: red;
 }
+
+
+#mycalendar_kb {
+    margin-right: 20px;
+	height: 100%; 
+    margin-left: 20px;
+}
+
+
+
+#mycalendar_kb .doesOverlap {
+    background-color: white;
+}
+
 
 .chunk-td {
     width: 6px;
     margin: 0px;
     border: 0px;
+    background: #AAA;
+    border-bottom: solid 1px black;
+}
+
+.chunk-tr {
+    height: 4px;
+    margin: 0px;
+    border: 0px;
+    background: #AAA;
 }
 
 .hour-line {
-    border-left-style: solid;
-    border-left-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
     text-align: left;
 }
 
-.quarter-hour-line {
-    border-left-style: dotted;
-    border-left-width: 1px;
+.hour-dash {
+    border-bottom-style: solid;
+    border-bottom-color: pink;
+    border-bottom-width: 1px;
+    text-align: left;
 }
+
+
+.quarter-hour-line {
+    border-bottom-style: dotted;
+    border-bottom-color: red;
+    border-bottom-width: 1px;
+}
+
+.quarter-hour-dash {
+    border-bottom-style: dotted;
+    border-bottom-color: #FFF;
+    border-bottom-width: 1px;
+}
+
 
 #calendar-table {
     border-style: solid;
-    border-width: 1px;
+    border-width: 4px;
 }
 
 .ui-icon {
@@ -95,24 +140,93 @@ h1 {
 
 #main-form select option {
     background-color: white;
-    color: #4CC552;
+	color: #8B8378;
 }
 
 #main-form #id_also_include {
     display: inline-block;
+    width: 200px;
+    height: 100px;
 }
 
 #main-form #id_dont_include {
     display: inline-block;
+    width: 200px;
+    height: 100px;
 }
 
 .displayInline {
     display: inline-block;
 }
 
+
+ul.possible_sched {
+	list-style-type: none;		
+}
+
+ul.possible_sched li{
+	padding: 10px 0;
+}
+
+
+table.possible_sched_header {
+	width: 70%;
+	border: none;
+
+}
+td.possible_sched_header {
+	height: 20px;
+	background: #8B8378;
+	color: white;
+	margin-right: 15px;
+}
+
+table.possible_sched {
+	width: 70%;
+
+}
+td.possible_sched {
+	height: 50px;
+	background: #8B8378;
+	color: white;
+	border-bottom: solid 1px grey;
+	font-weight: bold;
+	width: 33%;
+}
+
+tr.possible_sched {
+	height: 100px:
+	
+}
+
 .schedule-interview-name {
     margin-right: 15px;
+	border-bottom: solid 1px #DDD;
+	font-weight: bold;
+	width: 30%;
 }
+
+.schedule-interview-time {
+    margin-right: 15px;
+    margin: 50px 15;
+	border-bottom: solid 1px #DDD;
+	width: 35%;
+}
+
+
+.fsSubmitButton
+{
+	border-top:			none;
+	border-left:		none;
+	border-right:		none;
+	border-bottom:		none;
+	padding:		10px 20px !important;
+	font-size:		14px !important;
+	background-color: #8B8378;
+	color: white;
+
+}
+
 
 
 /* ============
@@ -179,7 +293,7 @@ textarea { overflow: auto; vertical-align: top; resize: vertical; }
 input:valid, textarea:valid {  }
 input:invalid, textarea:invalid { background-color: #f0dddd; }
 
-table { border-collapse: collapse; border-spacing: 0; }
+table { border-collapse: collapse; border-spacing: 0;  }
 td { vertical-align: top; }
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: black; padding: 0.2em 0; }
@@ -201,7 +315,7 @@ td { vertical-align: top; }
    =================== */
 
 #main aside{ 
-	border-top:20px solid purple;
+	border-top:20px solid #daf3ed;
 	background:#808080;
 }
 
@@ -217,7 +331,7 @@ nav a{
 	display:block;
 	margin-bottom: 5px;
 	padding: 2px 0 0 0 ;
-	background: #4CC552;
+	background: #daf3ed;
 	color: white;
 	text-align:center;
 	text-decoration:none;
