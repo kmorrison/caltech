@@ -1,81 +1,91 @@
 {% extends "base.html" %}
 {% block header_includes %}
 <script type="text/javascript">
-    {% if calendar_response %} 
-    $(document).ready(function() {
-        var calendars = {{calendar_response.json_events|safe}};
+	{% if calendar_response %} 
+	$(document).ready(function() {
+		var calendars = {{calendar_response.json_events|safe}};
 
-        function draw_calendar(calendars){
-            $('#mycalendar table').remove();
+		function pad2(number) {
+			return (number < 10 ? '0' : '') + number
+		}
 
-            var date_of_interest = new Date($("#mycalendar").attr('date'));
-            $('#mycalendar span.date-text').text(date_of_interest.toDateString());
+		function draw_calendar(calendars){
+			$('#mycalendar table').remove();
 
-            $('#mycalendar').append($("<table><thead></thead><tbody></tbody></table>").attr("id", "calendar-table"));
-            var tr = $('#mycalendar thead').append("<tr></tr>");
-            tr.append("<th>Interviewer</th>");
-            for (i = {{START_HOUR}}; i < {{START_HOUR}} + {{HOURS_PER_DAY}}; i++){
-                tr.append($('<th colspan="' + {{CHUNKS_PER_HOUR}} + '">' + i + '</th>').addClass("hour-line"));
-            }
+			var date_of_interest = new Date($("#mycalendar").attr('date'));
+			$('#mycalendar span.date-text').text(date_of_interest.toDateString());
 
-            for (i = 0; i < calendars.length; i++){
-                var tr = $('#mycalendar tbody').append("<tr></tr>");
-                var calendar = calendars[i];
+			$('#mycalendar').append($("<table><thead></thead><tbody></tbody></table>").attr("id", "calendar-table"));
+			var tr = $('#mycalendar thead').append("<tr></tr>");
+			tr.append("<th>Interviewer</th>");
+			for (i = 0; i < calendars.length; i++){
+				var calendar = calendars[i]
+				tr.append('<th>' + calendar.display_name + '</th>');
+			}
 
-                tr.append('<td>' + calendar.display_name + '</td>');
+			var chunk_length = 60 / {{CHUNKS_PER_HOUR}};
+			for (hour = {{START_HOUR}}; hour < {{START_HOUR}} + {{HOURS_PER_DAY}}; hour++){
+				for (chunk_of_hour = 0; chunk_of_hour < {{CHUNKS_PER_HOUR}}; chunk_of_hour++){
+					var tr = $('#mycalendar tbody').append("<tr></tr>");
 
-                for (hour = {{START_HOUR}}; hour < {{START_HOUR}} + {{HOURS_PER_DAY}}; hour++){
-                for (chunk_of_hour = 0; chunk_of_hour < {{CHUNKS_PER_HOUR}}; chunk_of_hour++){
-                    var found_overlap = false;
-                    var date_period_start = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, chunk_of_hour * (60/{{CHUNKS_PER_HOUR}}), 0, 0 )
-                    var date_period_end = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, (chunk_of_hour + 1) * (60/{{CHUNKS_PER_HOUR}}), 0, 0 )
-                    for (k = 0; k < calendar.busy_times.length; k++){
-                        busy_time_start = new Date(calendar.busy_times[k][0]);
-                        busy_time_end = new Date(calendar.busy_times[k][1]);
+					var chunk_minute = chunk_of_hour * chunk_length;
+					if (chunk_minute % 15 == 0) {
+						tr.append("<td>" + hour + ":" + pad2(chunk_minute) + "</td>");
+					} else {
+						tr.append("<td>-</td>");
+					}	
 
-                        if ((date_period_start >= busy_time_start && date_period_end <= busy_time_end) || (date_period_start <= busy_time_start && date_period_end >= busy_time_end)){
-                            tr.append($("<td class='chunk-td'></td>").addClass("doesOverlap"));
-                            found_overlap = true;
-                            break;
-                        }
-                    }
-                    if (!found_overlap){
-                        tr.append("<td class='chunk-td'></td>");
-                    }
+					for (i = 0; i < calendars.length; i++){
+						var calendar = calendars[i];
+						var found_overlap = false;
+						var date_period_start = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, chunk_minute, 0, 0 );
+						var date_period_end = new Date(date_of_interest.getFullYear(), date_of_interest.getMonth(), date_of_interest.getDate(), hour, chunk_minute + chunk_length, 0, 0 );
 
-                    if (chunk_of_hour == 0){
-                        tr.children().last().addClass("hour-line");
-                    }
-                    else if (chunk_of_hour % ({{CHUNKS_PER_HOUR}} / 4) == 0){
-                        tr.children().last().addClass("quarter-hour-line");
-                    }
-                }
-                }
-            }
+						for (k = 0; k < calendar.busy_times.length; k++){
+							busy_time_start = new Date(calendar.busy_times[k][0]);
+							busy_time_end = new Date(calendar.busy_times[k][1]);
 
-        }
+							if ((date_period_start >= busy_time_start && date_period_end <= busy_time_end) || (date_period_start <= busy_time_start && date_period_end >= busy_time_end)) {
+								tr.append($("<td class='chunk-td'></td>").addClass("doesOverlap"));
+								found_overlap = true;
+								break;
+							}
+						}
+						if (!found_overlap){
+							tr.append("<td class='chunk-td'></td>");
+						}
+						if (chunk_of_hour == 0){
+							tr.children().last().addClass("hour-line");
+						}
+						else if (chunk_of_hour % ({{CHUNKS_PER_HOUR}} / 4) == 0){
+							tr.children().last().addClass("quarter-hour-line");
+						}
+					}
+				}
+			}
+		}
 
-        var current_date = new Date("{{START_DATE}}");
-        $('#mycalendar').attr('date', current_date.toJSON());
+		var current_date = new Date("{{START_DATE}}");
+		$('#mycalendar').attr('date', current_date.toJSON());
 
-        $('.ui-icon-circle-arrow-w').click(function() {
+		$('.ui-icon-circle-arrow-w').click(function() {
 
-            var current_date = new Date($("#mycalendar").attr('date'));
-            var new_date = new Date(current_date.getTime() - (24 * 60 * 60 * 1000));
-            $('#mycalendar').attr('date', new_date.toJSON());
-            draw_calendar(calendars);
-        });
+			var current_date = new Date($("#mycalendar").attr('date'));
+			var new_date = new Date(current_date.getTime() - (24 * 60 * 60 * 1000));
+			$('#mycalendar').attr('date', new_date.toJSON());
+			draw_calendar(calendars);
+		});
 
-        $('.ui-icon-circle-arrow-e').click(function() {
-            var current_date = new Date($("#mycalendar").attr('date'));
-            var new_date = new Date(current_date.getTime() + (24 * 60 * 60 * 1000));
-            $('#mycalendar').attr('date', new_date.toJSON());
-            draw_calendar(calendars);
-        });
+		$('.ui-icon-circle-arrow-e').click(function() {
+			var current_date = new Date($("#mycalendar").attr('date'));
+			var new_date = new Date(current_date.getTime() + (24 * 60 * 60 * 1000));
+			$('#mycalendar').attr('date', new_date.toJSON());
+			draw_calendar(calendars);
+		});
 
-        draw_calendar(calendars);
-    });
-    {% endif %}
+		draw_calendar(calendars);
+	});
+	{% endif %}
 
 </script>
 {% endblock %}
@@ -88,16 +98,16 @@
 
 <div id="main-form">
 <form action="/find_times_post/" method="post">{% csrf_token %}
-    {{find_times_form.as_p}}
-    <input id="submit-button" type="submit" value="Submit"/>
+	{{find_times_form.as_p}}
+	<input id="submit-button" type="submit" value="Submit"/>
 </form>
 </div>
 
 {% if calendar_response %} 
 <div id="mycalendar" date="">
-    <span class="ui-icon ui-icon-circle-arrow-w"></span>
-    <span class="ui-icon ui-icon-circle-arrow-e"></span>
-    <span class="date-text"></span>
+	<span class="ui-icon ui-icon-circle-arrow-w"></span>
+	<span class="ui-icon ui-icon-circle-arrow-e"></span>
+	<span class="date-text"></span>
 </div>
 {% endif %}
 

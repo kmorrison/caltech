@@ -7,28 +7,10 @@
 <script type="text/javascript" src="/static/js/jquery-1.8.1.min.js"></script> 
 <script type="text/javascript" src="/static/js/jquery-ui-1.8.23.custom.min.js"></script> 
 <script type="text/javascript" src="/static/js/jquery-ui-timepicker-addon.js"></script> 
-<script type="text/javascript">
-    $(function() {
-        $("#id_start_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-    $(function() {
-        $("#id_end_time").datetimepicker({dateFormat: "yy-mm-dd", timeFormat: "hh:mm:ss"});
-    });
-
-    $(document).ready(function() {
-        $('#id_also_include').attr('size', "10");
-        $('#id_also_include').parent().css('display', 'inline-block');
-
-        $('#id_dont_include').attr('size', "10");
-        $('#id_dont_include').parent().css('display', 'inline-block');
-
-        $('#submit-button').css('display', 'block');
-
-    });
-
-</script>
+<script type="text/javascript" src="/static/js/lib.js"></script>
 
 {% block header_includes %}{% endblock %}
+
 </head>
 <body>
 	<div id="header-container">
