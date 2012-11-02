@@ -1,41 +1,82 @@
 from datetime import timedelta
 import collections
+import heapq
 import itertools
 import random
 
+from caltech import secret
+from jeeves import models
 from jeeves.calendar import lib
+from jeeves.calendar.client import calendar_client
 
 MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
 
-def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=20):
+def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=100):
     num_attempts = 0
-    possible_schedules = []
-    for possible_required_order in possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
-        possible_schedule = possible_required_order
-        if is_valid_schedule(possible_schedule) and possible_schedule not in possible_schedules:
-            possible_schedules.append(possible_schedule)
+    created_interviews = []
+    rooms = get_all_rooms(time_period)
+    preferences = get_preferences(required_interviewers + optional_interviewers)
+
+    for possible_schedule in possible_schedules(
+        required_interviewers,
+        optional_interviewers,
+        num_interviewers_needed,
+        time_period,
+        possible_break,
+        max_schedules
+    ):
+
+        interview = create_interview(possible_schedule, rooms, preferences)
+        # Add the schedule if it meets our validity heuristics
+        if (interview is not None
+        and interview not in created_interviews):
+            created_interviews.append(interview)
+
         num_attempts += 1
-        if num_attempts > 100000 or len(possible_schedules) > max_schedules:
-            print "exiting %s %s" % (num_attempts, len(possible_schedules))
+        if num_attempts > 100000 or len(created_interviews) > max_schedules:
+            print "exiting %s %s" % (num_attempts, len(created_interviews))
             break
 
-    return possible_schedules
+    return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
 
 InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
+Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 
-def possible_orders(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+def get_all_rooms(time_period):
+    room_id = getattr(secret, 'room_id', None)
+    if room_id is None:
+        return None
+    all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
+    return calendar_client.get_calendars([], all_rooms, time_period).interview_calendars
+
+def get_preferences(interviewers):
+    # WARNING: N DB queries
+    return dict(
+            (interviewer.interviewer.address, interviewer.interviewer.preference_set.all())
+            for interviewer in interviewers
+    )
+
+
+def possible_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+    """A generator to generate a bunch of valid orders of interviewers whose times work.
+
+    Does not take into account rooms, time padding, or previously generated interviews.
+    """
     num_required = len(required_interviewers)
     assert num_required <= num_interviewers_needed, "Cannot require %s interviewers for only %s interviews" % (num_required, num_interviewers_needed)
     interviewer_pool = required_interviewers + [None for _ in xrange(num_interviewers_needed - num_required)]
+    # Start with a random assortment of the required interviewers and empty space
     random.shuffle(interviewer_pool)
 
     for possible_order in itertools.permutations(interviewer_pool):
         for _ in xrange(1000):
+            # For a random permutation of the required/empty set, sample some optional interviewers and try them out
             mutable_order = list(possible_order)
             chosen_optional = random.sample(optional_interviewers, num_interviewers_needed - num_required)
             none_indices = [i for i, element in enumerate(possible_order) if element is None]
             for replace_index, optional_interviewer in zip(none_indices, chosen_optional):
+                # Fill in optional ones into space
                 mutable_order[replace_index] = optional_interviewer
 
             if possible_break is not None:
@@ -60,6 +101,10 @@ def possible_orders(required_interviewers, optional_interviewers, num_interviewe
 
 
 def try_order_with_anchor(possible_order, anchor_index):
+    """Given a random order with an anchor that his its times filled already, see if the rest of the times would make sense.
+
+    Replace interviewers in the possible order with InterviewSlots, which are interviewers with associated times.
+    """
     interview_slots = []
     anchor = possible_order[anchor_index]
     for position, interviewer in enumerate(possible_order):
@@ -78,28 +123,70 @@ def try_order_with_anchor(possible_order, anchor_index):
             required_slot = lib.time_period_of_length_after_time(anchor.end_time, MINUTES_OF_INTERVIEW, position - anchor_index - 1)
 
         if not interviewer.has_availability_during(required_slot):
-            interview_slots = None
-            break
+            # This order won't work, return it as invalid
+            return None
         interview_slots.append(InterviewSlot(interviewer.interviewer.address, required_slot.start_time, required_slot.end_time))
+
     return interview_slots
 
+def calculate_preference_score(interview_slots, preferences):
+    return sum(_preference_score(interview_slot, preferences[interview_slot.interviewer]) for interview_slot in interview_slots)
 
-def is_valid_schedule(possible_schedule):
+def _preference_score(interviewer_slot, preferences):
+    if not preferences:
+        return 10
+
+    assert interviewer_slot.start_time.date() == interviewer_slot.end_time.date()
+    date = interviewer_slot.start_time.date()
+
+    for preference in preferences:
+        if preference.day != str(interviewer_slot.start_time.weekday):
+            continue
+
+        if preference.time_period(date).contains(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
+            return 10
+
+    return 0
+
+
+def create_interview(possible_schedule, rooms, preferences):
     if possible_schedule is None:
-        return False
+        return None
 
-    # TODO: More checking
+    room = None
+    if rooms is not None:
+        # If we're looking at rooms, find one that fits and insert it into the schedule
+        interview_duration = lib.TimePeriod(
+            possible_schedule[0].start_time,
+            possible_schedule[-1].end_time
+        )
+        possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
+        if not possible_rooms:
+            # Short circuit, because we couldn't find a room
+            return None
 
-    return True
+        preference_score = calculate_preference_score(possible_schedule, preferences)
+
+        # Choose a valid room randomly to avoid scheduling the same room always
+        # because of arbitrary db ordering
+        room = InterviewSlot(
+            random.choice(possible_rooms).interviewer.display_name,
+            interview_duration.start_time,
+            interview_duration.end_time
+        )
+
+    # TODO: Calculate priority based on room availability, peoples preferences, interview padding
+    return Interview(interview_slots=possible_schedule, room=room, priority=preference_score)
 
 
 def possible_interview_chunks(free_times):
+    """Given a list of free times, yield them in 45 minute chunks."""
     possible_free_times = filter_free_times_for_length(free_times)
 
     for free_time in free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
-            
+
             # Only schedule interviews at minute multiples of the scan
             # resolution. IE., if the resolution is 15 minutes, only consider
             # interviews at 11:00, 11:15, 11:30
@@ -113,4 +200,5 @@ def possible_interview_chunks(free_times):
             )
 
 def filter_free_times_for_length(free_times):
+    """Given a list of free times, return chunks that are of the given length or greater."""
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
