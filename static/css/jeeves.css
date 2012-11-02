@@ -1,10 +1,20 @@
+
+/* changes for datepicker widget */
+.ui-timepicker-div, .id_requisition, .hasDatepicker { color: #7F7F7F; font: 12pt;}
+.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: 1px solid #CCC; background: #F15B47; 50% 50% repeat-x; font-weight: normal; color: white; }
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: 1px solid #aaaaaa; background: #7F7F7F; font-weight: normal; color: white; }
+.ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; color: #7F7F7F; background: white;}
+.ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; background: white; border: none; border-bottom: dashed 1px #CCC;}
+.ui-datepicker {position: relative; left:100px; top:150px;}
+.ui-datepicker thead {color: #F15B46;}
+
 html, body{
-	color: #8B8378;
+	color: #7F7F7F;
 	height: 100%;
 }
 
 body {
-	font: 6px/26px 'RalewayThin', Arial, sans-serif;
+	font: 12pt 'RalewayThin', Arial, sans-serif;
 	background-image: url(/static/images/bg.png); 
 	background-position: left top;
 	background-repeat: repeat
@@ -12,13 +22,13 @@ body {
 
 #header-container {
 	height: 8em;
-	background: #8B8378;
+	background: #7F7F7F;
 	padding: 10px;
 	margin: -10px;
 	-webkit-box-shadow:0 5px 10px #aaa;
 	-moz-box-shadow:0 5px 10px #aaa;
 	box-shadow:0 5px 10px #aaa;
-	border-bottom: 1em solid #01C5BB;
+	border-bottom: 1em solid #39E2DC;
 }
 
 #header-container a {
@@ -40,7 +50,7 @@ nav li:last-child a{ margin-right:0; }
 
 #admin a {
 	background: white;
-	color: #8B8378;
+	color: #7F7F7F;
 }
 
 h1 {
@@ -72,7 +82,7 @@ h1 {
     height: 1px;
     width: 10px;
     background: white;
-    border-right: dashed 1px #a8b6b3;
+    border-right: dashed 1px #7F7F7F;
     text-align: right;
 }
 
@@ -89,7 +99,7 @@ h1 {
     margin: 0px;
     background: white;
     border-bottom: none;
-    border-right: dashed 1px #a8b6b3;
+    border-right: dashed 1px #7F7F7F;
 }
 
 .hour-line {
@@ -97,11 +107,11 @@ h1 {
 }
 
 .quarter-hour-line {
-    border-top: dotted #a8b6b3 1px;
+    border-top: dotted #7F7F7F 1px;
 }
 
 #calendar-table {
-    border: solid 3px #a8b6b3;
+    border: solid 3px #7F7F7F;
 
 }
 
@@ -111,13 +121,14 @@ h1 {
 
 #main-form select option {
     background-color: white;
-	color: #8B8378;
+	color: #7F7F7F;
 }
 
 #main-form #id_also_include {
     display: inline-block;
     width: 200px;
     height: 100px;
+    color: #7F7F7F; font: 12pt 'RalewayThin', Arial, sans-serif;
 }
 
 #main-form #id_dont_include {
@@ -179,10 +190,13 @@ table.possible_sched {
 	border-left:		none;
 	border-right:		none;
 	border-bottom:		none;
-	padding:		10px 20px !important;
+	padding:		5px 10px !important;
 	font-size:		14px !important;
-	background-color: #8B8378;
+	background-color: #7F7F7F;
 	color: white;
+	-moz-border-radius: 8px;
+	border-radius: 8px;
+
 
 }
 
@@ -295,7 +309,7 @@ nav a{
 	display:block;
 	margin-bottom: 5px;
 	padding: 2px 0 0 0 ;
-	background: #01C5BB;
+	background: #39E2DC;
 	color: white;
 	text-align:center;
 	text-decoration:none;
@@ -481,5 +495,5 @@ nav a{
 
 #footer-container{ 
 	border-top: 20px solid #4CC552;
-	background: #8B8378;
+	background: #7F7F7F;
 }
