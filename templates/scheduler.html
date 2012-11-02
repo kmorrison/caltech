@@ -2,6 +2,13 @@
 
 {% block header_includes %}
 
+<script> 
+
+	function pad2(number) {
+			return (number < 10 ? '0' : '') + number
+		}
+</script>
+
 {% endblock %}
 
 {% block body %}
@@ -18,23 +25,19 @@
 {% if schedules %}
 <h2>Possible Schedules</h2>
 
-
 <ul class="possible_sched">
     {% for schedule in schedules %}
     <li>
-    <table>
+    <table class="possible_sched">
         {% if schedule.room %}
-        <tr>
-            <td class="room-interview-name">{{schedule.room.interviewer}}</td>
-            <td class="room-interview-time">{{schedule.room.start_time}}</td>
-            <td class="room-interview-time">{{schedule.room.end_time}}</td>
-        </tr>
+        <tr><td class="room-interview-name">{{schedule.room.interviewer}}</td></tr>
+        <tr><td class="room-interview-time">{{schedule.room.start_time.hour}}:{{schedule.room.start_time.minute}} to {{schedule.room.end_time.hour}}:{{schedule.room.end_time.minute}}</td></tr>
+
         {% endif %}
         {% for interview_slot in schedule.interview_slots %}
         <tr>
+            <td class="schedule-interview-time">{{interview_slot.start_time.hour}}:{{interview_slot.start_time.minute}}</td>
             <td class="schedule-interview-name">{{interview_slot.interviewer}}</td>
-            <td class="schedule-interview-time">{{interview_slot.start_time}}</td>
-            <td class="schedule-interview-time">{{interview_slot.end_time}}</td>
         </tr>
         {% endfor %}
     </table>
