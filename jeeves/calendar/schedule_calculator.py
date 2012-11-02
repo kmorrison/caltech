@@ -11,6 +11,7 @@ from jeeves.calendar.client import calendar_client
 
 MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
+BREAK = 'Break'
 
 def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=100):
     num_attempts = 0
@@ -80,7 +81,7 @@ def possible_schedules(required_interviewers, optional_interviewers, num_intervi
                 mutable_order[replace_index] = optional_interviewer
 
             if possible_break is not None:
-                break_interview_slot = InterviewSlot('Break', possible_break.start_time, possible_break.end_time)
+                break_interview_slot = InterviewSlot(BREAK, possible_break.start_time, possible_break.end_time)
 
                 # only try breaks in the first two interview slots
                 for i in xrange(2):
@@ -130,7 +131,7 @@ def try_order_with_anchor(possible_order, anchor_index):
     return interview_slots
 
 def calculate_preference_score(interview_slots, preferences):
-    return sum(_preference_score(interview_slot, preferences[interview_slot.interviewer]) for interview_slot in interview_slots)
+    return sum(_preference_score(interview_slot, preferences[interview_slot.interviewer]) for interview_slot in interview_slots if interview_slot.interviewer != BREAK)
 
 def _preference_score(interviewer_slot, preferences):
     if not preferences:
@@ -154,6 +155,7 @@ def create_interview(possible_schedule, rooms, preferences):
         return None
 
     room = None
+    room_score = 0
     if rooms is not None:
         # If we're looking at rooms, find one that fits and insert it into the schedule
         interview_duration = lib.TimePeriod(
@@ -161,22 +163,20 @@ def create_interview(possible_schedule, rooms, preferences):
             possible_schedule[-1].end_time
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
-        if not possible_rooms:
-            # Short circuit, because we couldn't find a room
-            return None
+        if possible_rooms:
+            # Choose a valid room randomly to avoid scheduling the same room always
+            # because of arbitrary db ordering
+            room = InterviewSlot(
+                random.choice(possible_rooms).interviewer.display_name,
+                interview_duration.start_time,
+                interview_duration.end_time
+            )
+            room_score = 100
 
-        preference_score = calculate_preference_score(possible_schedule, preferences)
+    preference_score = calculate_preference_score(possible_schedule, preferences)
 
-        # Choose a valid room randomly to avoid scheduling the same room always
-        # because of arbitrary db ordering
-        room = InterviewSlot(
-            random.choice(possible_rooms).interviewer.display_name,
-            interview_duration.start_time,
-            interview_duration.end_time
-        )
-
-    # TODO: Calculate priority based on room availability, peoples preferences, interview padding
-    return Interview(interview_slots=possible_schedule, room=room, priority=preference_score)
+    # TODO: Calculate priority based on interview padding
+    return Interview(interview_slots=possible_schedule, room=room, priority=room_score + preference_score)
 
 
 def possible_interview_chunks(free_times):
