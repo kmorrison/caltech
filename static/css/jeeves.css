@@ -3,12 +3,12 @@ html, body{
 	height: 100%;
 }
 
-body {font:16px/26px 'RalewayThin', Arial, sans-serif;
+body {
+	font: 6px/26px 'RalewayThin', Arial, sans-serif;
 	background-image: url(/static/images/bg.png); 
 	background-position: left top;
 	background-repeat: repeat
 }
-
 
 #header-container {
 	height: 8em;
@@ -18,29 +18,27 @@ body {font:16px/26px 'RalewayThin', Arial, sans-serif;
 	-webkit-box-shadow:0 5px 10px #aaa;
 	-moz-box-shadow:0 5px 10px #aaa;
 	box-shadow:0 5px 10px #aaa;
-	border-bottom: 1em solid #daf3ed; 
+	border-bottom: 1em solid #01C5BB;
 }
 
-#header-container a{
+#header-container a {
 	text-decoration:none;
-	color: #8B8378;
+	color: white;
 }
 
 #title{ color:white; font:'Lobster1.1Regular', Arial, sans-serif; }
 
-
 .wrapper {
 	margin:0 auto;
 	width:90%;
-	}
+}
 
 nav ul, nav ol { list-style: none; list-style-image: none; margin: 0; padding: 0;}
-	
 
 nav li:first-child a{ margin-left:0; }
-	nav li:last-child  a{ margin-right:0; }
+nav li:last-child a{ margin-right:0; }
 
-#admin a{
+#admin a {
 	background: white;
 	color: #8B8378;
 }
@@ -62,76 +60,49 @@ h1 {
 
 /* the calendar results after a request */
 
-#mycalendar {
+#mycalendar table{
+	font-size: 13px;
     margin-top: 20px;
 	width: 100%; 
     margin-bottom: 20px;
+    border: none;
 }
 
+#mycalendar td {	
+    height: 1px;
+    width: 10px;
+    background: white;
+    border-right: dashed 1px #a8b6b3;
+    text-align: right;
+}
+
+#mycalendar th{
+	font-size: 10px;
+	padding: 0px 10px;
+}
 
 #mycalendar .doesOverlap {
-    background-color: red;
+    background-color: #F15B47;
 }
-
-
-#mycalendar_kb {
-    margin-right: 20px;
-	height: 100%; 
-    margin-left: 20px;
-}
-
-
-
-#mycalendar_kb .doesOverlap {
-    background-color: white;
-}
-
 
 .chunk-td {
-    width: 6px;
     margin: 0px;
-    border: 0px;
-    background: #AAA;
-    border-bottom: solid 1px black;
-}
-
-.chunk-tr {
-    height: 4px;
-    margin: 0px;
-    border: 0px;
-    background: #AAA;
+    background: white;
+    border-bottom: none;
+    border-right: dashed 1px #a8b6b3;
 }
 
 .hour-line {
-    border-bottom-style: solid;
-    border-bottom-width: 1px;
-    text-align: left;
+    border-top: solid #F15B47 1.5px;
 }
-
-.hour-dash {
-    border-bottom-style: solid;
-    border-bottom-color: pink;
-    border-bottom-width: 1px;
-    text-align: left;
-}
-
 
 .quarter-hour-line {
-    border-bottom-style: dotted;
-    border-bottom-color: red;
-    border-bottom-width: 1px;
+    border-top: dotted #a8b6b3 1px;
 }
-
-.quarter-hour-dash {
-    border-bottom-style: dotted;
-    border-bottom-color: #FFF;
-    border-bottom-width: 1px;
-}
-
 
 #calendar-table {
-    border-style: solid;
-    border-width: 4px;
+    border: solid 3px #a8b6b3;
+
 }
 
 .ui-icon {
@@ -169,50 +140,38 @@ ul.possible_sched li{
 }
 
 
-table.possible_sched_header {
-	width: 70%;
-	border: none;
-
-}
-td.possible_sched_header {
-	height: 20px;
-	background: #8B8378;
-	color: white;
-	margin-right: 15px;
-}
-
 table.possible_sched {
-	width: 70%;
-
+	width: 500px;
 }
-td.possible_sched {
-	height: 50px;
-	background: #8B8378;
-	color: white;
-	border-bottom: solid 1px grey;
+
+
+.room-interview-name {
+	border-bottom: none;
+	font-size: 12pt;
 	font-weight: bold;
-	width: 33%;
+	width: 200px;
+	text-align: left;
 }
 
-tr.possible_sched {
-	height: 100px:
-	
-}
-
-.schedule-interview-name {
-    margin-right: 15px;
-	border-bottom: solid 1px #DDD;
-	font-weight: bold;
-	width: 30%;
+.room-interview-time {
+	border-bottom: dashed 1px #DDD;
+	font-size: 12pt;
+	width: 200px;
+	text-align: left;
 }
 
 .schedule-interview-time {
     margin-right: 15px;
-    margin: 50px 15;
-	border-bottom: solid 1px #DDD;
-	width: 35%;
+	width: 200px;
+	color: #F15B47;
+	text-align: right;
 }
 
+.schedule-interview-name {
+	width: 285px;
+	padding: 0px 20px;
+	text-align: left;
+}
 
 .fsSubmitButton
 {
@@ -225,6 +184,11 @@ tr.possible_sched {
 	background-color: #8B8378;
 	color: white;
 
+}
+
+
+.id_requisition {
+	font-size: 10px;
 }
 
 
@@ -331,7 +295,7 @@ nav a{
 	display:block;
 	margin-bottom: 5px;
 	padding: 2px 0 0 0 ;
-	background: #daf3ed;
+	background: #01C5BB;
 	color: white;
 	text-align:center;
 	text-decoration:none;
@@ -464,11 +428,7 @@ nav a{
 		-moz-border-radius: 15px;
 		border-radius: 15px;
 }		
-	#main aside{
-		float:right;
-		width:5%;
-	}
-}
+	
 
 @media only screen and (min-width: 1140px) {
 

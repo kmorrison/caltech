@@ -16,9 +16,9 @@ from caltech import secret
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-START_HOUR = 8
-HOURS_PER_DAY = 11
-CHUNKS_PER_HOUR = 12  # Must divide evenly into 60
+START_HOUR = 9
+HOURS_PER_DAY = 10
+CHUNKS_PER_HOUR = 4  # Must divide evenly into 60
 
 # TODO: Where does this go?
 def all_reqs():
