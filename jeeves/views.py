@@ -68,12 +68,44 @@ class FindTimesForm(forms.Form):
     def time_period(self):
         return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
 
-class SuggestScheduleForm(FindTimesForm):
+class RequisitionScheduleForm(forms.Form):
+
+    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
+    number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
+
+class SuggestScheduleForm(forms.Form):
+
+    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
+
+    start_time = forms.DateTimeField(label='Availability Start Time')
+    end_time = forms.DateTimeField(label='Availability End Time')
+
+    also_include = forms.ModelMultipleChoiceField(
+            queryset=all_interviewers(),
+            required=False,
+    )
+    dont_include = forms.ModelMultipleChoiceField(
+            queryset=all_interviewers(),
+            required=False,
+            label="Don't Include",
+    )
 
     number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
 
     break_start_time = forms.DateTimeField(required=False, label='Break Start Time (optional)')
     break_end_time = forms.DateTimeField(required=False, label='Break End Time (optional)')
+
+    @property
+    def requisition_and_custom_interviewers(self):
+        return (
+                self.cleaned_data['requisition'],
+                self.cleaned_data['also_include'],
+                self.cleaned_data['dont_include'],
+        )
+
+    @property
+    def time_period(self):
+        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
 
     @property
     def possible_break(self):
