@@ -79,4 +79,4 @@ class PreferenceAdmin(admin.ModelAdmin):
 
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
-admin.site.register(Preference, PreferenceAdmin)
+admin.site.register(Preference)
