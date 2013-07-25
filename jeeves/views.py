@@ -70,12 +70,20 @@ class FindTimesForm(forms.Form):
 
 class RequisitionScheduleForm(forms.Form):
 
-    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
+    requisition = forms.ModelChoiceField(
+        queryset=all_reqs(), 
+        initial=getattr(secret, 'preferred_requisition_id', None) or 1,
+    )
     number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
+
+RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
 
 class SuggestScheduleForm(forms.Form):
 
-    requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
+    requisition = forms.ModelChoiceField(
+        queryset=all_reqs(), 
+        initial=getattr(secret, 'preferred_requisition_id', None) or 1,
+    )
 
     start_time = forms.DateTimeField(label='Availability Start Time')
     end_time = forms.DateTimeField(label='Availability End Time')
