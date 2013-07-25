@@ -3,7 +3,7 @@ from datetime import datetime
 import random
 from pprint import pprint
 
-import simplejson as json
+import json
 from django.core.serializers.json import DjangoJSONEncoder
 
 from caltech import secret
