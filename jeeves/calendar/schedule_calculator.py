@@ -14,7 +14,7 @@ SCAN_RESOLUTION = 15  # Minutes
 BREAK = 'Break'
 
 
-InterviewerGroup = collections.namedtuple('InterviewerGroup', ('interviewers', 'num_required'))
+InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
 def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):

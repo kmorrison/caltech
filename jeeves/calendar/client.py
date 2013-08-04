@@ -69,7 +69,7 @@ class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
         print "service response:"
-        pprint(service_response)
+        #pprint(service_response)
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
@@ -183,7 +183,7 @@ class ServiceClient(object):
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
         print "query body:"
-        pprint(query_body)
+        #pprint(query_body)
         return CalendarResponse(
                 calendar_query,
                 self._service.freebusy().query(body=query_body).execute()
