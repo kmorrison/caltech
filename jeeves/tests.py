@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.test import TestCase
 from django.test.client import Client
+import mock
 import pytz
 
 from caltech import settings
@@ -183,23 +184,24 @@ class CalendarClientTestCase(BaseTestCase):
         self.time_period = lib.TimePeriod(now, tomorrow)
 
     def test_one_interviewer(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain], [], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
     def test_two_interviewers(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 2)
-        self.assertEqual([self.captain, self.first_mate], [ic.interviewer for ic in calendar_response.interview_calendars])
+        self.assertEqual(set([self.captain, self.first_mate]), set([ic.interviewer for ic in calendar_response.interview_calendars]))
 
     def test_time_bounds(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain], [], self.time_period)
+        calendar_response = self.calendar_client.get_calendars([self.captain], self.time_period)
         self.assertEqual(len(calendar_response.interview_calendars), 1)
         self.assertEqual(self.captain, calendar_response.interview_calendars[0].interviewer)
 
         busy_times = calendar_response.interview_calendars[0].busy_times
         self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
 
+@mock.patch('caltech.secret.room_id', new=None)
 class SchedulerTestCase(BaseTestCase):
 
     def setUp(self):
@@ -220,12 +222,10 @@ class SchedulerTestCase(BaseTestCase):
         self.calendar_client = client.Client(self.test_service_client)
 
     def test_possible(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
-        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.captain.name])
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        interviewer_groups = [schedule_calculator.InterviewerGroup(interviewers=calendar_response.interview_calendars, num_required=2)]
         schedules = schedule_calculator.calculate_schedules(
-                required_interviewers,
-                optional_interviewers,
-                2,
+                interviewer_groups,
                 self.time_period,
                 possible_break=self.default_break,
         )
@@ -233,13 +233,14 @@ class SchedulerTestCase(BaseTestCase):
         self.assertEqual(len(schedules), 1)
 
     def test_break_before_and_after(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
-        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
+        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], self.time_period)
+        interviewer_groups = [
+            schedule_calculator.InterviewerGroup(interviewers=[interview_calendar], num_required=1)
+            for interview_calendar in calendar_response.interview_calendars
+        ]
 
         schedules = schedule_calculator.calculate_schedules(
-                required_interviewers,
-                optional_interviewers,
-                1,
+                interviewer_groups,
                 self.time_period,
                 possible_break=self.default_break.shift_minutes(45),
         )
@@ -247,20 +248,23 @@ class SchedulerTestCase(BaseTestCase):
         self.assertEqual(len(schedules), 2)
 
     def test_no_break(self):
-        calendar_response = self.calendar_client.get_calendars([self.captain, self.first_mate], [], self.time_period)
-        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([self.first_mate.name])
+        calendar_response = self.calendar_client.get_calendars([self.first_mate], self.time_period)
+        interviewer_groups = [
+            schedule_calculator.InterviewerGroup(interviewers=[interview_calendar], num_required=1)
+            for interview_calendar in calendar_response.interview_calendars
+        ]
 
         schedules = schedule_calculator.calculate_schedules(
-                required_interviewers,
-                optional_interviewers,
-                1,
+                interviewer_groups,
                 self.time_period,
         )
+        print self.time_period
+        print schedules
 
         self.assertEqual(len(schedules), 13)
 
 class LibraryTestCase(BaseTestCase):
-    
+
     def setUp(self):
         now = datetime.now()
         later = now + timedelta(minutes=10)
@@ -268,19 +272,19 @@ class LibraryTestCase(BaseTestCase):
         later3 = now + timedelta(minutes=45)
         later4 = now + timedelta(minutes=60)
         later5 = now + timedelta(minutes=90)
-        
-        self.times = [(now, later), (now, later2), (later, later3), (later4, later5)]    
-    
-    def test_identity(self):        
+
+        self.times = [(now, later), (now, later2), (later, later3), (later4, later5)]
+
+    def test_identity(self):
         self.assertEqual(self.times[:1], lib.collapse_times(self.times[:1]))
-        
+
     def test_collapse_overlap(self):
         """  [(now, later2)] """
         self.assertEqual(
-            [(self.times[0][0], self.times[1][1])], 
+            [(self.times[0][0], self.times[1][1])],
             lib.collapse_times(self.times[:2])
         )
-        
+
     def test_collapse_gap(self):
         """  [(now, later2)] """
         self.assertEqual(
