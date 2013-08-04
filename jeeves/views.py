@@ -27,7 +27,7 @@ def all_reqs():
 def all_interviewers():
     return models.Interviewer.objects.all()
 
-def get_interviewers(requisition, also_include=None, dont_include=None):
+def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
     interviewers = set(requisition.interviewers.all())
     required_interviewers = set()
@@ -39,6 +39,31 @@ def get_interviewers(requisition, also_include=None, dont_include=None):
         interviewers -= set(models.Interviewer.objects.filter(id__in=[i.id for i in dont_include]))
 
     return required_interviewers, interviewers - required_interviewers
+
+def get_interviewer_groups(form):
+    """Extract interviewers requirements from the form and turn them into InterviewerGroups.
+    XXX: This is pretty hacky right now as we transition to formsets on the form
+    """
+    # TODO: Collapse querys into single, nonlooping query
+    requisitions = [form.cleaned_data['requisition']]
+    requisitions = [models.Requisition.objects.get(id=req.id) for req in requisitions]
+    interviewers_by_requisition = [set(requisition.interviewers.all()) for requisition in requisitions]
+    num_required = form.cleaned_data['number_of_interviewers']
+    if form.cleaned_data['dont_include'] is not None:
+        dont_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in form.cleaned_data['also_include']]))
+        interviewers_by_requisition = [interviewers_by_req - dont_interviewers for interviewers_by_req in interviewers_by_requisition]
+
+    if form.cleaned_data['also_include'] is not None:
+        must_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in form.cleaned_data['also_include']]))
+        interviewers_by_requisition = [interviewers_by_req - must_interviewers for interviewers_by_req in interviewers_by_requisition]
+        num_required -= len(must_interviewers)
+
+    interviewer_groups = [schedule_calculator.InterviewerGroup(interviewers=interviewers_by_requisition[0], num_required=num_required)]
+    if form.cleaned_data['also_include'] is not None:
+        interviewer_groups.append(schedule_calculator.InterviewerGroup(interviewers=must_interviewers, num_required=len(must_interviewers)))
+
+    return interviewer_groups
+
 
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
@@ -71,7 +96,7 @@ class FindTimesForm(forms.Form):
 class RequisitionScheduleForm(forms.Form):
 
     requisition = forms.ModelChoiceField(
-        queryset=all_reqs(), 
+        queryset=all_reqs(),
         initial=getattr(secret, 'preferred_requisition_id', None) or 1,
     )
     number_of_interviewers = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
@@ -81,7 +106,7 @@ RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleF
 class SuggestScheduleForm(forms.Form):
 
     requisition = forms.ModelChoiceField(
-        queryset=all_reqs(), 
+        queryset=all_reqs(),
         initial=getattr(secret, 'preferred_requisition_id', None) or 1,
     )
 
@@ -144,7 +169,10 @@ def find_times_post(request):
                 *find_times_form.requisition_and_custom_interviewers
         )
 
-        calendar_response = calendar_client.get_calendars(required_interviewers, optional_interviewers, find_times_form.time_period)
+        calendar_response = calendar_client.get_calendars(
+            required_interviewers | optional_interviewers,
+            find_times_form.time_period,
+        )
 
         return render(
                 request,
@@ -176,17 +204,28 @@ def scheduler(request):
 def scheduler_post(request):
     scheduler_form = SuggestScheduleForm(request.POST)
     valid_submission = scheduler_form.is_valid()
-    if scheduler_form.is_valid():
-        required_interviewers, optional_interviewers = get_interviewers(
-                *scheduler_form.requisition_and_custom_interviewers
+    if valid_submission:
+        interviewer_groups = get_interviewer_groups(
+                scheduler_form
         )
 
-        calendar_response = calendar_client.get_calendars(required_interviewers, optional_interviewers, scheduler_form.time_period)
-        required_interviewers, optional_interviewers = calendar_response.winnow_by_interviewers([interviewer.name for interviewer in scheduler_form.cleaned_data['also_include']])
+        calendar_responses = [
+            calendar_client.get_calendars(
+                interviewer_group.interviewers,
+                scheduler_form.time_period)
+            for interviewer_group in interviewer_groups
+            if interviewer_group.num_required
+        ]
+        interviewer_groups_with_calendars = [
+            schedule_calculator.InterviewerGroup(
+                interviewers=calendar_response.interview_calendars,
+                num_required=interviewer_group.num_required,
+            )
+            for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
+        ]
+
         schedules = schedule_calculator.calculate_schedules(
-                required_interviewers,
-                optional_interviewers,
-                scheduler_form.cleaned_data['number_of_interviewers'],
+                interviewer_groups_with_calendars,
                 time_period=scheduler_form.time_period,
                 possible_break=scheduler_form.possible_break,
         )

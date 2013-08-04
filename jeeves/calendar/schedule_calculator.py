@@ -13,16 +13,19 @@ MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
 BREAK = 'Break'
 
-def calculate_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break=None, max_schedules=100):
+
+InterviewerGroup = collections.namedtuple('InterviewerGroup', ('interviewers', 'num_required'))
+
+
+def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
     num_attempts = 0
     created_interviews = []
     rooms = get_all_rooms(time_period)
-    preferences = get_preferences(required_interviewers + optional_interviewers)
+    interviewers = itertools.chain.from_iterable(interviewer_group.interviewers for interviewer_group in interviewer_groups)
+    preferences = get_preferences(interviewers)
 
     for possible_schedule in possible_schedules(
-        required_interviewers,
-        optional_interviewers,
-        num_interviewers_needed,
+        interviewer_groups,
         time_period,
         possible_break,
         max_schedules
@@ -49,7 +52,7 @@ def get_all_rooms(time_period):
     if room_id is None:
         return None
     all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
-    return calendar_client.get_calendars([], all_rooms, time_period).interview_calendars
+    return calendar_client.get_calendars(all_rooms, time_period).interview_calendars
 
 def get_preferences(interviewers):
     # WARNING: N DB queries
@@ -58,47 +61,41 @@ def get_preferences(interviewers):
             for interviewer in interviewers
     )
 
+def generate_possible_orders_forever(interviewer_groups):
+    while True:
+        possible_order = []
+        for interviewer_group in interviewer_groups:
+            possible_order.extend(random.sample(interviewer_group.interviewers, interviewer_group.num_required))
+        yield possible_order
 
-def possible_schedules(required_interviewers, optional_interviewers, num_interviewers_needed, time_period, possible_break, max_schedules):
+
+def possible_schedules(interviewer_groups, time_period, possible_break, max_schedules):
     """A generator to generate a bunch of valid orders of interviewers whose times work.
 
     Does not take into account rooms, time padding, or previously generated interviews.
     """
-    num_required = len(required_interviewers)
-    assert num_required <= num_interviewers_needed, "Cannot require %s interviewers for only %s interviews" % (num_required, num_interviewers_needed)
-    interviewer_pool = required_interviewers + [None for _ in xrange(num_interviewers_needed - num_required)]
-    # Start with a random assortment of the required interviewers and empty space
-    random.shuffle(interviewer_pool)
+    for iteration, possible_order in enumerate(generate_possible_orders_forever(interviewer_groups)):
+        possible_order = list(possible_order)
 
-    for possible_order in itertools.permutations(interviewer_pool):
-        for _ in xrange(1000):
-            # For a random permutation of the required/empty set, sample some optional interviewers and try them out
-            mutable_order = list(possible_order)
-            chosen_optional = random.sample(optional_interviewers, num_interviewers_needed - num_required)
-            none_indices = [i for i, element in enumerate(possible_order) if element is None]
-            for replace_index, optional_interviewer in zip(none_indices, chosen_optional):
-                # Fill in optional ones into space
-                mutable_order[replace_index] = optional_interviewer
+        if possible_break is not None:
+            break_interview_slot = InterviewSlot(BREAK, possible_break.start_time, possible_break.end_time)
 
-            if possible_break is not None:
-                break_interview_slot = InterviewSlot(BREAK, possible_break.start_time, possible_break.end_time)
+            # only try breaks in the first two interview slots
+            for i in xrange(2):
+                order_with_break = list(possible_order)
+                order_with_break.insert(i, break_interview_slot)
+                validated_order = try_order_with_anchor(order_with_break, anchor_index=i)
+                if validated_order is not None:
+                    yield validated_order
 
-                # only try breaks in the first two interview slots
-                for i in xrange(2):
-                    order_with_break = list(mutable_order)
-                    order_with_break.insert(i, break_interview_slot)
-                    validated_order = try_order_with_anchor(order_with_break, anchor_index=i)
-                    if validated_order is not None:
-                        yield validated_order
+        else:
+            address_of_anchor = possible_order[0].interviewer.address
+            for possible_slot in possible_interview_chunks(possible_order[0].free_times):
+                possible_order[0] = InterviewSlot(address_of_anchor, possible_slot.start_time, possible_slot.end_time)
 
-            else:
-                address_of_anchor = mutable_order[0].interviewer.address
-                for possible_slot in possible_interview_chunks(mutable_order[0].free_times):
-                    mutable_order[0] = InterviewSlot(address_of_anchor, possible_slot.start_time, possible_slot.end_time)
-
-                    validated_order = try_order_with_anchor(mutable_order, anchor_index=0)
-                    if validated_order is not None:
-                        yield validated_order
+                validated_order = try_order_with_anchor(possible_order, anchor_index=0)
+                if validated_order is not None:
+                    yield validated_order
 
 
 def try_order_with_anchor(possible_order, anchor_index):

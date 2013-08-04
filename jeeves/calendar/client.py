@@ -14,10 +14,10 @@ MAX_INTERVIEWERS_IN_QUERY = 20
 
 class CalendarQuery(object):
 
-    def __init__(self, required_interviewers, optional_interviewers, time_period):
-        self.interviewers = list(required_interviewers) + random.sample(
-                optional_interviewers,
-                min(MAX_INTERVIEWERS_IN_QUERY - len(required_interviewers), len(optional_interviewers))
+    def __init__(self, interviewers, time_period):
+        self.interviewers = random.sample(
+                interviewers,
+                min(MAX_INTERVIEWERS_IN_QUERY, len(interviewers))
         )
         self.time_period = time_period
 
@@ -68,6 +68,7 @@ class InterviewCalendar(object):
 class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
+        print "service response:"
         pprint(service_response)
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
@@ -117,8 +118,8 @@ class Client(object):
         else:
             self._service_client = ServiceClient(schedule.build_service())
 
-    def get_calendars(self, required_interviewers, optional_interviewers, time_period):
-        return self._service_client.process_calendar_query(CalendarQuery(required_interviewers, optional_interviewers, time_period))
+    def get_calendars(self, interviewers, time_period):
+        return self._service_client.process_calendar_query(CalendarQuery(interviewers, time_period))
 
 class MockServiceClient(object):
 
@@ -134,7 +135,7 @@ class MockServiceClient(object):
                 mock_service_response,
         )
 
-    def _build_random_calendar(self, interviewer, time_period, saturation_coefficient=0.33, minutes_of_resolution=15):
+    def _build_random_calendar(self, interviewer, time_period, saturation_coefficient=0.15, minutes_of_resolution=15):
         busy_times = []
         current_time = time_period.start_time
         while current_time < time_period.end_time:
@@ -181,6 +182,7 @@ class ServiceClient(object):
 
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
+        print "query body:"
         pprint(query_body)
         return CalendarResponse(
                 calendar_query,
