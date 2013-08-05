@@ -104,10 +104,11 @@ class FindTimesForm(forms.Form):
 class RequisitionScheduleForm(forms.Form):
     requisition = forms.ModelChoiceField(
         queryset=all_reqs(),
+        required=False,
     )
-    num_required = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int)
+    num_required = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int, initial=1)
 
-RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=1)
+RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
 
 class SuggestScheduleForm(forms.Form):
     start_time = forms.DateTimeField(label='Availability Start Time')
