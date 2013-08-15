@@ -132,7 +132,14 @@ def try_order_with_anchor(possible_order, anchor_index):
         if not interviewer.has_availability_during(required_slot):
             # This order won't work, return it as invalid
             return None
-        interview_slots.append(InterviewSlot(interviewer.interviewer.address, required_slot.start_time, required_slot.end_time))
+
+        interview_slots.append(
+            InterviewSlot(
+                interviewer.interviewer.address,
+                required_slot.start_time,
+                required_slot.end_time
+            )
+        )
 
     return interview_slots
 
