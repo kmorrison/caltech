@@ -128,7 +128,10 @@ def try_order_with_anchor(possible_order, anchor_index):
     return interview_slots
 
 def calculate_preference_score(interview_slots, preferences):
-    return sum(_preference_score(interview_slot, preferences[interview_slot.interviewer]) for interview_slot in interview_slots if interview_slot.interviewer != BREAK)
+    return sum(
+        _preference_score(interview_slot, preferences[interview_slot.interviewer])
+        for interview_slot in interview_slots if interview_slot.interviewer != BREAK
+    )
 
 def _preference_score(interviewer_slot, preferences):
     if not preferences:
@@ -195,6 +198,7 @@ def possible_interview_chunks(free_times):
                     potential_time.start_time + timedelta(minutes=SCAN_RESOLUTION),
                     potential_time.end_time + timedelta(minutes=SCAN_RESOLUTION),
             )
+
 
 def filter_free_times_for_length(free_times):
     """Given a list of free times, return chunks that are of the given length or greater."""
