@@ -14,6 +14,8 @@ SCAN_RESOLUTION = 15  # Minutes
 BREAK = 'Break'
 
 
+InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
+Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
@@ -33,8 +35,10 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
 
         interview = create_interview(possible_schedule, rooms, preferences)
         # Add the schedule if it meets our validity heuristics
-        if (interview is not None
-        and interview not in created_interviews):
+        if (
+            interview is not None
+            and interview not in created_interviews
+        ):
             created_interviews.append(interview)
 
         num_attempts += 1
@@ -43,9 +47,6 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             break
 
     return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
-
-InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
-Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 
 def get_all_rooms(time_period):
     room_id = getattr(secret, 'room_id', None)
@@ -115,10 +116,18 @@ def try_order_with_anchor(possible_order, anchor_index):
 
         if position < anchor_index:
             # Go back n slots from start time
-            required_slot = lib.time_period_of_length_after_time(anchor.start_time, MINUTES_OF_INTERVIEW, position - anchor_index)
+            required_slot = lib.time_period_of_length_after_time(
+                anchor.start_time,
+                MINUTES_OF_INTERVIEW,
+                position - anchor_index
+            )
         else:
             # Go forward n slots from end time
-            required_slot = lib.time_period_of_length_after_time(anchor.end_time, MINUTES_OF_INTERVIEW, position - anchor_index - 1)
+            required_slot = lib.time_period_of_length_after_time(
+                anchor.end_time,
+                MINUTES_OF_INTERVIEW,
+                position - anchor_index - 1
+            )
 
         if not interviewer.has_availability_during(required_slot):
             # This order won't work, return it as invalid
