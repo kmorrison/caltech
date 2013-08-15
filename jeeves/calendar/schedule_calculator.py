@@ -11,6 +11,7 @@ from jeeves.calendar.client import calendar_client
 
 MINUTES_OF_INTERVIEW = 45
 SCAN_RESOLUTION = 15  # Minutes
+IDEAL_PADDING_TIME = 15  # Minutes
 BREAK = 'Break'
 
 
@@ -23,7 +24,9 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
     num_attempts = 0
     created_interviews = []
     rooms = get_all_rooms(time_period)
-    interviewers = itertools.chain.from_iterable(interviewer_group.interviewers for interviewer_group in interviewer_groups)
+    interviewers = list(itertools.chain.from_iterable(
+        interviewer_group.interviewers for interviewer_group in interviewer_groups
+    ))
     preferences = get_preferences(interviewers)
 
     for possible_schedule in possible_schedules(
@@ -33,7 +36,13 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
         max_schedules
     ):
 
-        interview = create_interview(possible_schedule, rooms, preferences)
+        interview = create_interview(
+            possible_schedule,
+            interviewers,
+            rooms,
+            preferences,
+        )
+
         # Add the schedule if it meets our validity heuristics
         if (
             interview is not None
@@ -79,7 +88,11 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
         possible_order = list(possible_order)
 
         if possible_break is not None:
-            break_interview_slot = InterviewSlot(BREAK, possible_break.start_time, possible_break.end_time)
+            break_interview_slot = InterviewSlot(
+                interviewer=BREAK,
+                start_time=possible_break.start_time,
+                end_time=possible_break.end_time
+            )
 
             # only try breaks in the first two interview slots
             for i in xrange(2):
@@ -92,7 +105,11 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
         else:
             address_of_anchor = possible_order[0].interviewer.address
             for possible_slot in possible_interview_chunks(possible_order[0].free_times):
-                possible_order[0] = InterviewSlot(address_of_anchor, possible_slot.start_time, possible_slot.end_time)
+                possible_order[0] = InterviewSlot(
+                    interviewer=address_of_anchor,
+                    start_time=possible_slot.start_time,
+                    end_time=possible_slot.end_time,
+                )
 
                 validated_order = try_order_with_anchor(possible_order, anchor_index=0)
                 if validated_order is not None:
@@ -135,9 +152,9 @@ def try_order_with_anchor(possible_order, anchor_index):
 
         interview_slots.append(
             InterviewSlot(
-                interviewer.interviewer.address,
-                required_slot.start_time,
-                required_slot.end_time
+                interviewer=interviewer.interviewer.address,
+                start_time=required_slot.start_time,
+                end_time=required_slot.end_time
             )
         )
 
@@ -148,6 +165,23 @@ def calculate_preference_score(interview_slots, preferences):
         _preference_score(interview_slot, preferences[interview_slot.interviewer])
         for interview_slot in interview_slots if interview_slot.interviewer != BREAK
     )
+
+
+def calculate_interviewer_schedule_padding_score(possible_schedule, interviewer_calendars):
+    interviewer_by_address = dict(
+        (interviewer_calendar.interviewer.address, interviewer_calendar)
+        for interviewer_calendar in interviewer_calendars
+    )
+
+    padding_score = 0
+    for interviewer_slot in possible_schedule:
+        interviewer_calendar = interviewer_by_address[interviewer_slot.interviewer]
+        interviewer_time_with_padding = lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time + timedelta(minutes=IDEAL_PADDING_TIME))
+        if interviewer_calendar.has_availability_during(interviewer_time_with_padding):
+            padding_score += 5
+
+    return padding_score
+
 
 def _preference_score(interviewer_slot, preferences):
     if not preferences:
@@ -166,7 +200,7 @@ def _preference_score(interviewer_slot, preferences):
     return 0
 
 
-def create_interview(possible_schedule, rooms, preferences):
+def create_interview(possible_schedule, interviewers, rooms, preferences):
     if possible_schedule is None:
         return None
 
@@ -190,9 +224,21 @@ def create_interview(possible_schedule, rooms, preferences):
             room_score = 100
 
     preference_score = calculate_preference_score(possible_schedule, preferences)
+    interviewer_schedule_padding_score = calculate_interviewer_schedule_padding_score(
+          possible_schedule,
+          interviewers,
+    )
 
     # TODO: Calculate priority based on interview padding
-    return Interview(interview_slots=possible_schedule, room=room, priority=room_score + preference_score)
+    return Interview(
+        interview_slots=possible_schedule,
+        room=room,
+        priority=(
+            room_score
+            + preference_score
+            + interviewer_schedule_padding_score
+        )
+    )
 
 
 def possible_interview_chunks(free_times):
