@@ -64,6 +64,9 @@ class InterviewCalendar(object):
                 return True
         return False
 
+    def __repr__(self):
+        return self.interviewer.address
+
 
 class CalendarResponse(object):
 
