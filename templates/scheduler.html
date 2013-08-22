@@ -3,7 +3,6 @@
 {% block header_includes %}
 
 <script> 
-
 	function pad2(number) {
 			return (number < 10 ? '0' : '') + number
 		}
@@ -17,6 +16,7 @@
 
 <div id="main-form">
 <form action="/scheduler_post/" method="post">{% csrf_token %}
+    {{requisition_formset.as_p}}
     {{scheduler_form.as_p}}
     <input type="submit" value="Submit"/>
 </form>
