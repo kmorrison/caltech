@@ -16,6 +16,7 @@ BREAK = 'Break'
 
 
 class InterviewSlot(object):
+    """Object representing an interviewer doing an interview at a certain time."""
     def __init__(
         self,
         interviewer,
@@ -45,6 +46,11 @@ InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', '
 
 
 def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
+    """Exposed method for calculating new interviews.
+
+    Returns:
+      List of <Interview>s
+    """
     num_attempts = 0
     created_interviews = []
     rooms = get_all_rooms(time_period)
@@ -96,6 +102,7 @@ def get_preferences(interviewers):
     )
 
 def generate_possible_orders_forever(interviewer_groups):
+    """Given a grouping of interviews, generate possible schedules."""
     while True:
         possible_order = []
         for interviewer_group in interviewer_groups:
