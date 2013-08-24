@@ -152,7 +152,13 @@ ul.possible_sched li{
 
 
 table.possible_sched {
-	width: 500px;
+	width: 80%;
+}
+
+th.schedule-preference{
+	font-size: 10pt;
+  font-weight: normal;
+  text-align: left;
 }
 
 
@@ -167,19 +173,19 @@ table.possible_sched {
 .room-interview-time {
 	border-bottom: dashed 1px #DDD;
 	font-size: 12pt;
-	width: 200px;
+	width: 20%;
 	text-align: left;
 }
 
 .schedule-interview-time {
     margin-right: 15px;
-	width: 200px;
-	color: #F15B47;
-	text-align: right;
+    width: 100px;
+    color: #F15B47;
+    text-align: left;
 }
 
 .schedule-interview-name {
-	width: 285px;
+	width: 185px;
 	padding: 0px 20px;
 	text-align: left;
 }
