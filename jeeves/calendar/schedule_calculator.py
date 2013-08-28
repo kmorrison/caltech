@@ -235,10 +235,12 @@ def _preference_score(interviewer_slot, preferences):
     date = interviewer_slot.start_time.date()
 
     for preference in preferences:
-        if preference.day != str(interviewer_slot.start_time.weekday):
+        if preference.day != str(interviewer_slot.start_time.weekday()):
             continue
 
-        if preference.time_period(date).contains(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
+        if preference.time_period(date).contains(
+            lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)
+        ):
             return 15
 
     return 0

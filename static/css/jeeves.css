@@ -173,7 +173,7 @@ th.schedule-preference{
 .room-interview-time {
 	border-bottom: dashed 1px #DDD;
 	font-size: 12pt;
-	width: 20%;
+	width: 100px;
 	text-align: left;
 }
 

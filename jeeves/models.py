@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib import admin
 
 from datetime import datetime
+import pytz
+from caltech import settings
 
 
 class Interviewer(models.Model):
@@ -56,8 +58,12 @@ class Preference(models.Model):
 
     def time_period(self, date):
         from jeeves.calendar import lib
-        preference_start_time = datetime(date.year, date.month, date.day, self.start_time.hour, self.start_time.minute)
-        preference_end_time = datetime(date.year, date.month, date.day, self.end_time.hour, self.end_time.minute)
+        preference_start_time = datetime(
+            date.year, date.month, date.day, self.start_time.hour, self.start_time.minute, tzinfo=pytz.timezone(settings.TIME_ZONE)
+        )
+        preference_end_time = datetime(
+            date.year, date.month, date.day, self.end_time.hour, self.end_time.minute, tzinfo=pytz.timezone(settings.TIME_ZONE)
+        )
         return lib.TimePeriod(preference_start_time, preference_end_time)
 
 
