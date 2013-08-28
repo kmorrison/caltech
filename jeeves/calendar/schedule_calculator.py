@@ -15,12 +15,42 @@ IDEAL_PADDING_TIME = 15  # Minutes
 BREAK = 'Break'
 
 
-InterviewSlot = collections.namedtuple('InterviewSlot', ('interviewer', 'start_time', 'end_time'))
+class InterviewSlot(object):
+    """Object representing an interviewer doing an interview at a certain time."""
+    def __init__(
+        self,
+        interviewer,
+        start_time,
+        end_time,
+
+        is_inside_time_preference=False,
+        gets_buffer=False,
+        number_of_interviews='n/a',
+    ):
+        self.interviewer = interviewer
+        self.start_time = start_time
+        self.end_time = end_time
+
+        self.is_inside_time_preference = is_inside_time_preference
+        self.gets_buffer = gets_buffer
+        self.number_of_interviews = number_of_interviews
+
+    @property
+    def display_time(self):
+        time_format = "%I:%M"
+        return "%s - %s" % (self.start_time.strftime(time_format), self.end_time.strftime(time_format))
+
+
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
 def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
+    """Exposed method for calculating new interviews.
+
+    Returns:
+      List of <Interview>s
+    """
     num_attempts = 0
     created_interviews = []
     rooms = get_all_rooms(time_period)
@@ -72,6 +102,7 @@ def get_preferences(interviewers):
     )
 
 def generate_possible_orders_forever(interviewer_groups):
+    """Given a grouping of interviews, generate possible schedules."""
     while True:
         possible_order = []
         for interviewer_group in interviewer_groups:
@@ -91,7 +122,7 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
             break_interview_slot = InterviewSlot(
                 interviewer=BREAK,
                 start_time=possible_break.start_time,
-                end_time=possible_break.end_time
+                end_time=possible_break.end_time,
             )
 
             # only try breaks in the first two interview slots
@@ -154,36 +185,49 @@ def try_order_with_anchor(possible_order, anchor_index):
             InterviewSlot(
                 interviewer=interviewer.interviewer.address,
                 start_time=required_slot.start_time,
-                end_time=required_slot.end_time
+                end_time=required_slot.end_time,
             )
         )
 
     return interview_slots
 
-def calculate_preference_score(interview_slots, preferences):
-    return sum(
-        _preference_score(interview_slot, preferences[interview_slot.interviewer])
-        for interview_slot in interview_slots if interview_slot.interviewer != BREAK
-    )
+def calculate_preference_scores(interview_slots, preferences):
+    return [
+        _preference_score(interview_slot, preferences.get(interview_slot.interviewer))
+        for interview_slot in interview_slots
+    ]
 
 
-def calculate_interviewer_schedule_padding_score(possible_schedule, interviewer_calendars):
+def calculate_interviewer_schedule_padding_scores(possible_schedule, interviewer_calendars):
     interviewer_by_address = dict(
         (interviewer_calendar.interviewer.address, interviewer_calendar)
         for interviewer_calendar in interviewer_calendars
     )
 
-    padding_score = 0
+    padding_scores = []
     for interviewer_slot in possible_schedule:
-        interviewer_calendar = interviewer_by_address[interviewer_slot.interviewer]
-        interviewer_time_with_padding = lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time + timedelta(minutes=IDEAL_PADDING_TIME))
-        if interviewer_calendar.has_availability_during(interviewer_time_with_padding):
-            padding_score += 5
+        if interviewer_slot.interviewer == BREAK:
+            padding_scores.append(5)
+            continue
 
-    return padding_score
+        interviewer_calendar = interviewer_by_address[interviewer_slot.interviewer]
+        interviewer_time_with_padding = lib.TimePeriod(
+            interviewer_slot.start_time,
+            interviewer_slot.end_time + timedelta(minutes=IDEAL_PADDING_TIME)
+        )
+
+        if interviewer_calendar.has_availability_during(interviewer_time_with_padding):
+            padding_scores.append(5)
+        else:
+            padding_scores.append(0)
+
+    return padding_scores
 
 
 def _preference_score(interviewer_slot, preferences):
+    if interviewer_slot.interviewer == BREAK:
+        return 10
+
     if not preferences:
         return 10
 
@@ -195,7 +239,7 @@ def _preference_score(interviewer_slot, preferences):
             continue
 
         if preference.time_period(date).contains(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
-            return 10
+            return 15
 
     return 0
 
@@ -223,11 +267,18 @@ def create_interview(possible_schedule, interviewers, rooms, preferences):
             )
             room_score = 100
 
-    preference_score = calculate_preference_score(possible_schedule, preferences)
-    interviewer_schedule_padding_score = calculate_interviewer_schedule_padding_score(
+    preference_scores = calculate_preference_scores(possible_schedule, preferences)
+    preference_score = sum(preference_scores)
+    for interview_slot, score in zip(possible_schedule, preference_scores):
+        interview_slot.is_inside_time_preference = bool(score)
+
+    interviewer_schedule_padding_scores = calculate_interviewer_schedule_padding_scores(
           possible_schedule,
           interviewers,
     )
+    interviewer_schedule_padding_score = sum(interviewer_schedule_padding_scores)
+    for interview_slot, score in zip(possible_schedule, interviewer_schedule_padding_scores):
+        interview_slot.gets_buffer = bool(score)
 
     # TODO: Calculate priority based on interview padding
     return Interview(
