@@ -20,6 +20,8 @@ DATABASES = {
         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
     }
 }
+if getattr(secret, 'default_db', None) is not None:
+    DATABASES['default'] = secret.default_db
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
