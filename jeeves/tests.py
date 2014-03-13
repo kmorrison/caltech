@@ -1,6 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from datetime import timedelta
 from datetime import datetime
-from httplib import BadStatusLine
 
 from django.test import TestCase
 from django.test.client import Client
@@ -15,6 +16,7 @@ from jeeves.calendar import lib
 from jeeves.calendar import client
 
 DATEPICKER_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class BaseTestCase(TestCase):
     def setUp(self):
@@ -37,6 +39,7 @@ class ModelsTestCase(BaseTestCase):
 
         interviewers = self.req.interviewers.all()
         self.assertEqual([self.captain.id, self.first_mate.id], [i.id for i in interviewers])
+
 
 class FindTimesViewTestCase(BaseTestCase):
 
@@ -137,6 +140,7 @@ class FindTimesViewTestCase(BaseTestCase):
                 end_time=tomorrow.strftime(DATEPICKER_FORMAT),
         )
 
+
 class GetInterviewersTestCase(BaseTestCase):
 
     def test_get_interviewers(self):
@@ -175,6 +179,7 @@ class GetInterviewersTestCase(BaseTestCase):
                 views.get_interviewers(self.req, also_include=[self.pilot], dont_include=[self.pilot]),
         )
 
+
 class CalendarClientTestCase(BaseTestCase):
 
     def setUp(self):
@@ -201,6 +206,7 @@ class CalendarClientTestCase(BaseTestCase):
 
         busy_times = calendar_response.interview_calendars[0].busy_times
         self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
+
 
 @mock.patch('caltech.secret.room_id', new=None)
 class SchedulerTestCase(BaseTestCase):
@@ -264,6 +270,7 @@ class SchedulerTestCase(BaseTestCase):
 
         self.assertEqual(len(schedules), 13)
 
+
 class LibraryTestCase(BaseTestCase):
 
     def setUp(self):
@@ -298,7 +305,6 @@ class RetryLibTest(TestCase):
 
     class TestException(Exception):
         pass
-
 
     def test_retry(self):
         count = [0]
