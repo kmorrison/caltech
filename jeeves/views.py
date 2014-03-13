@@ -198,6 +198,12 @@ def scheduler(request):
     )
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
+def interview_post(request):
+
+    interview_form = dict(request.POST)
+    del interview_form['csrfmiddlewaretoken']
+    interview = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
+
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
     scheduler_form = SuggestScheduleForm(request.POST)
@@ -242,7 +248,6 @@ def scheduler_post(request):
             time_period=scheduler_form.time_period,
             possible_break=scheduler_form.possible_break,
     )
-
     return render(
             request,
             'scheduler.html',

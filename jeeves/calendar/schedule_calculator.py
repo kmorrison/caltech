@@ -40,6 +40,18 @@ class InterviewSlot(object):
         time_format = "%I:%M"
         return "%s - %s" % (self.start_time.strftime(time_format), self.end_time.strftime(time_format))
 
+    @property
+    def display_start_time(self):
+        return self.start_time.strftime("%I:%M")
+
+    @property
+    def display_end_time(self):
+        return self.end_time.strftime("%I:%M")
+
+    @property
+    def display_date(self):
+        return self.start_time.date().strftime("%x")
+    
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
