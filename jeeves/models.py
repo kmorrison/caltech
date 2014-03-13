@@ -6,6 +6,24 @@ import pytz
 from caltech import settings
 
 
+class InterviewType(object):
+
+    ON_SITE = 1
+    SKYPE = 2
+
+    @classmethod
+    def get_value(cls, *flags):
+        result = 0
+        for flag in flags:
+            result |= flag
+        return result
+
+    @classmethod
+    def are_flags_set(cls, type, *flags):
+        value = cls.get_value(*flags)
+        return value & type == value
+
+
 class Interviewer(models.Model):
 
     name = models.CharField(max_length=256)
@@ -22,6 +40,23 @@ class Interviewer(models.Model):
     class Meta:
         ordering = ('display_name',)
 
+
+class Room(models.Model):
+
+    name = models.CharField(max_length=256)
+    domain = models.CharField(max_length=256)
+    display_name = models.CharField(max_length=256)
+    type = models.IntegerField()
+
+    def __unicode__(self):
+        return self.display_name
+
+    @property
+    def address(self):
+        return "%s@%s" % (self.name, self.domain)
+
+    class Meta:
+        ordering = ('display_name',)
 
 class Requisition(models.Model):
 
