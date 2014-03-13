@@ -1,6 +1,5 @@
 from datetime import timedelta
 import collections
-import heapq
 import itertools
 import random
 
@@ -299,7 +298,7 @@ def possible_interview_chunks(free_times):
     """Given a list of free times, yield them in 45 minute chunks."""
     possible_free_times = filter_free_times_for_length(free_times)
 
-    for free_time in free_times:
+    for free_time in possible_free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
 

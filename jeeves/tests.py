@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from datetime import timedelta
 from datetime import datetime
 
@@ -14,6 +16,7 @@ from jeeves.calendar import lib
 from jeeves.calendar import client
 
 DATEPICKER_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class BaseTestCase(TestCase):
     def setUp(self):
@@ -36,6 +39,7 @@ class ModelsTestCase(BaseTestCase):
 
         interviewers = self.req.interviewers.all()
         self.assertEqual([self.captain.id, self.first_mate.id], [i.id for i in interviewers])
+
 
 class FindTimesViewTestCase(BaseTestCase):
 
@@ -136,6 +140,7 @@ class FindTimesViewTestCase(BaseTestCase):
                 end_time=tomorrow.strftime(DATEPICKER_FORMAT),
         )
 
+
 class GetInterviewersTestCase(BaseTestCase):
 
     def test_get_interviewers(self):
@@ -174,6 +179,7 @@ class GetInterviewersTestCase(BaseTestCase):
                 views.get_interviewers(self.req, also_include=[self.pilot], dont_include=[self.pilot]),
         )
 
+
 class CalendarClientTestCase(BaseTestCase):
 
     def setUp(self):
@@ -200,6 +206,7 @@ class CalendarClientTestCase(BaseTestCase):
 
         busy_times = calendar_response.interview_calendars[0].busy_times
         self.assertTrue(self.time_period.start_time <= busy_times[0].start_time)
+
 
 @mock.patch('caltech.secret.room_id', new=None)
 class SchedulerTestCase(BaseTestCase):
@@ -263,6 +270,7 @@ class SchedulerTestCase(BaseTestCase):
 
         self.assertEqual(len(schedules), 13)
 
+
 class LibraryTestCase(BaseTestCase):
 
     def setUp(self):
@@ -291,3 +299,113 @@ class LibraryTestCase(BaseTestCase):
             [(self.times[0][0], self.times[2][1]), (self.times[3][0], self.times[3][1])],
             lib.collapse_times(self.times)
         )
+
+
+class RetryLibTest(TestCase):
+
+    class TestException(Exception):
+        pass
+
+    def test_retry(self):
+        count = [0]
+
+        @lib.retry_decorator(self.TestException, max_number_of_tries=3, sleeping_function=lambda: None)
+        def function_to_retry():
+            count[0] += 1
+            raise self.TestException
+
+        try:
+            function_to_retry()
+        except self.TestException:
+            pass
+
+        self.assertEqual(count[0], 3)
+
+
+class RoomTest(TestCase):
+    def test_room_creation(self):
+        room_values = {
+            'name': 'Room',
+            'domain': 'yelp.com',
+            'display_name': 'Cool room',
+            'type': models.InterviewType.get_value(
+                models.InterviewType.ON_SITE,
+                models.InterviewType.SKYPE,
+            )
+        }
+        room = models.Room.objects.create(**room_values)
+        self.assertEqual(room.name, room_values['name'])
+        self.assertEqual(room.domain, room_values['domain'])
+        self.assertEqual(room.display_name, room_values['display_name'])
+        self.assertEqual(
+            models.InterviewType.are_flags_set(
+                room.type,
+                models.InterviewType.ON_SITE,
+            ),
+            True
+        )
+
+
+class InterviewScheduleTest(TestCase):
+
+    def test_interviewers_are_scheduled(self):
+        bryce = models.Interviewer.objects.create()
+        kyle = models.Interviewer.objects.create()
+
+        room = models.Room.objects.create(
+            type=1,
+        )
+        interview = models.Interview.objects.create(
+            type=1,
+            room=room,
+        )
+
+        models.ScheduledInterview.objects.create(
+            interviewer=bryce,
+            interview=interview,
+            start_time=datetime(2014, 3, 1, 12, 0),
+            end_time=datetime(2014, 3, 1, 12, 45),
+        )
+
+        models.ScheduledInterview.objects.create(
+            interviewer=kyle,
+            interview=interview,
+            start_time=datetime(2014, 3, 1, 12, 45),
+            end_time=datetime(2014, 3, 1, 13, 30),
+        )
+
+        assert len(interview.interviewer_set.all()) == 2
+
+
+class InterviewTypeTest(TestCase):
+    def test_get_values_and_check_if_flags_are_set(self):
+        on_site_type = models.InterviewType.get_value(
+            models.InterviewType.ON_SITE
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            True,
+            models.InterviewType.ON_SITE,
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            False,
+            models.InterviewType.SKYPE,
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            False,
+            models.InterviewType.SKYPE,
+            models.InterviewType.ON_SITE,
+        )
+
+    def _assert_are_flags_set(self, on_site_type, expected, *flags):
+        self.assertEqual(
+            models.InterviewType.are_flags_set(
+                on_site_type,
+                *flags
+            ),
+            expected
+        )
+
+
