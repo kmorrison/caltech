@@ -346,6 +346,39 @@ class RoomTest(TestCase):
         )
 
 
+class InterviewScheduleTest(TestCase):
+
+    def test_interviewers_are_scheduled(self):
+        bryce = models.Interviewer.objects.create()
+        kyle = models.Interviewer.objects.create()
+
+        room = models.Room.objects.create(
+            type=1,
+        )
+        interview = models.Interview.objects.create(
+            type=1,
+            room=room,
+        )
+
+        models.ScheduledInterview.objects.create(
+            interviewer=bryce,
+            interview=interview,
+            start_time=datetime(2014, 3, 1, 12, 0),
+            end_time=datetime(2014, 3, 1, 12, 45),
+        )
+
+        models.ScheduledInterview.objects.create(
+            interviewer=kyle,
+            interview=interview,
+            start_time=datetime(2014, 3, 1, 12, 45),
+            end_time=datetime(2014, 3, 1, 13, 30),
+        )
+
+        interview = models.Interview.object.get(id=interview.id)
+
+        assert len(interview.interviewer_set.all()) == 2
+
+
 class InterviewTypeTest(TestCase):
     def test_get_values_and_check_if_flags_are_set(self):
         on_site_type = models.InterviewType.get_value(
@@ -376,3 +409,5 @@ class InterviewTypeTest(TestCase):
             ),
             expected
         )
+
+

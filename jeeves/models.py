@@ -34,7 +34,7 @@ class Interviewer(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    interviews = models.ManyToManyField(Interview, through='Schedule')
+    interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
 
     def __unicode__(self):
         return self.display_name
@@ -75,7 +75,7 @@ class Requisition(models.Model):
         ordering = ('name',)
 
 
-class Schedule(models.Model):
+class ScheduledInterview(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
     start_time = models.TimeField()
@@ -139,3 +139,5 @@ class PreferenceAdmin(admin.ModelAdmin):
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
+admin.site.register(Room)
+admin.site.register(ScheduledInterview)
