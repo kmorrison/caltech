@@ -198,6 +198,12 @@ def scheduler(request):
     )
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
+def new_scheduler(request):
+    context = dict(
+      reqs=all_reqs()
+    )
+    return render_to_response('new_scheduler.html', context)
+
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
     scheduler_form = SuggestScheduleForm(request.POST)
