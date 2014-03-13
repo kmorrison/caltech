@@ -76,6 +76,7 @@ class CalendarResponse(object):
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
+                if interviewer.address in calendars
         ]
 
     @property
