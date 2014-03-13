@@ -77,8 +77,6 @@ def collapse_times(time_pairs):
     return collapsed_times
 
 def calculate_free_times(busy_times, start_time, end_time):
-    collapsed_busy_times = collapse_times(busy_times)
-
     # Turn busy times into free times
     free_times = []
     for busy_time in busy_times:
