@@ -64,6 +64,12 @@ class InterviewCalendar(object):
                 return True
         return False
 
+    def is_blocked_during(self, time_period):
+        for busy_time in self.busy_times:
+            if busy_time.contains(time_period):
+                return True
+        return False
+
     def __repr__(self):
         return self.interviewer.address
 
@@ -71,13 +77,24 @@ class InterviewCalendar(object):
 class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
-        print "service response:"
-        #pprint(service_response)
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
                 if interviewer.address in calendars
         ]
+        self._memoize_lookup = {}
+
+    def get_interviewer(self, interviewer_address):
+        if interviewer_address in self._memoize_lookup:
+            return self._memoize_lookup[interviewer_address]
+        interview_calendars = [intcal for intcal in self.interview_calendars if intcal.interviewer.address == interviewer_address]
+        assert len(interview_calendars) <= 1
+        if interview_calendars:
+            intcal = interview_calendars[0]
+        else:
+            intcal = None
+        self._memoize_lookup[interviewer_address] = intcal
+        return intcal
 
     @property
     def interviewers(self):

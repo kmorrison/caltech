@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from django.db import models
 from django.contrib import admin
 
@@ -19,8 +21,15 @@ class Interviewer(models.Model):
     def address(self):
         return "%s@%s" % (self.name, self.domain)
 
+    @property
+    def preferences_address(self):
+        return "%s.interviews@%s" % (self.name, self.domain)
+
     class Meta:
         ordering = ('display_name',)
+
+
+InterviewerStruct = namedtuple('InterviewerStruct', 'address')
 
 
 class Requisition(models.Model):
