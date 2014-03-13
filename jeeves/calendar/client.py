@@ -1,7 +1,6 @@
-from datetime import timedelta
-from datetime import datetime
 import random
-from pprint import pprint
+from datetime import timedelta
+from httplib import BadStatusLine
 
 import json
 from django.core.serializers.json import DjangoJSONEncoder
@@ -76,6 +75,7 @@ class CalendarResponse(object):
         calendars = service_response['calendars']
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
                 for interviewer in calendar_query.interviewers
+                if interviewer.address in calendars
         ]
 
     @property
@@ -183,6 +183,7 @@ class ServiceClient(object):
     def __init__(self, service):
         self._service = service
 
+    @lib.retry_decorator(BadStatusLine)
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
         print "query body:"
