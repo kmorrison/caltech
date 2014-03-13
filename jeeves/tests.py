@@ -320,3 +320,59 @@ class RetryLibTest(TestCase):
             pass
 
         self.assertEqual(count[0], 3)
+
+
+class RoomTest(TestCase):
+    def test_room_creation(self):
+        room_values = {
+            'name': 'Room',
+            'domain': 'yelp.com',
+            'display_name': 'Cool room',
+            'type': models.InterviewType.get_value(
+                models.InterviewType.ON_SITE,
+                models.InterviewType.SKYPE,
+            )
+        }
+        room = models.Room.objects.create(**room_values)
+        self.assertEqual(room.name, room_values['name'])
+        self.assertEqual(room.domain, room_values['domain'])
+        self.assertEqual(room.display_name, room_values['display_name'])
+        self.assertEqual(
+            models.InterviewType.are_flags_set(
+                room.type,
+                models.InterviewType.ON_SITE,
+            ),
+            True
+        )
+
+
+class InterviewTypeTest(TestCase):
+    def test_get_values_and_check_if_flags_are_set(self):
+        on_site_type = models.InterviewType.get_value(
+            models.InterviewType.ON_SITE
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            True,
+            models.InterviewType.ON_SITE,
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            False,
+            models.InterviewType.SKYPE,
+        )
+        self._assert_are_flags_set(
+            on_site_type,
+            False,
+            models.InterviewType.SKYPE,
+            models.InterviewType.ON_SITE,
+        )
+
+    def _assert_are_flags_set(self, on_site_type, expected, *flags):
+        self.assertEqual(
+            models.InterviewType.are_flags_set(
+                on_site_type,
+                *flags
+            ),
+            expected
+        )
