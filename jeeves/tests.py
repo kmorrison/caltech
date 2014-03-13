@@ -1,5 +1,6 @@
 from datetime import timedelta
 from datetime import datetime
+from httplib import BadStatusLine
 
 from django.test import TestCase
 from django.test.client import Client
@@ -291,3 +292,25 @@ class LibraryTestCase(BaseTestCase):
             [(self.times[0][0], self.times[2][1]), (self.times[3][0], self.times[3][1])],
             lib.collapse_times(self.times)
         )
+
+
+class RetryLibTest(TestCase):
+
+    class TestException(Exception):
+        pass
+
+
+    def test_retry(self):
+        count = [0]
+
+        @lib.retry_decorator(self.TestException, max_number_of_tries=3, sleeping_function=lambda: None)
+        def function_to_retry():
+            count[0] += 1
+            raise self.TestException
+
+        try:
+            function_to_retry()
+        except self.TestException:
+            pass
+
+        self.assertEqual(count[0], 3)

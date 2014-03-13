@@ -1,6 +1,7 @@
-from datetime import timedelta
-from datetime import datetime
 import random
+from datetime import datetime
+from datetime import timedelta
+from httplib import BadStatusLine
 from pprint import pprint
 
 import json
@@ -184,6 +185,7 @@ class ServiceClient(object):
     def __init__(self, service):
         self._service = service
 
+    @lib.retry_decorator(BadStatusLine)
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
         print "query body:"

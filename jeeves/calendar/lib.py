@@ -1,6 +1,7 @@
 from datetime import timedelta
 from datetime import datetime
 import itertools
+import time
 
 import pytz
 
@@ -91,3 +92,22 @@ def calculate_free_times(busy_times, start_time, end_time):
         free_times.append((start_time, end_time))
 
     return free_times
+
+def retry_decorator(exception_to_retry, max_number_of_tries=3, sleeping_function=lambda: time.sleep(1)):
+    def decorator(function):
+
+        def retried_function(*args, **kwargs):
+
+            number_of_tries_so_far = 0
+            while True:
+                try:
+                    return function(*args, **kwargs)
+                except exception_to_retry as error:
+                    number_of_tries_so_far += 1
+                    sleeping_function()
+                    if number_of_tries_so_far >= max_number_of_tries:
+                        raise error
+
+        return retried_function
+
+    return decorator
