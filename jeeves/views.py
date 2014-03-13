@@ -1,7 +1,5 @@
-from datetime import timedelta
 from datetime import datetime
 
-from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render
 from django.shortcuts import render_to_response
@@ -101,6 +99,7 @@ class FindTimesForm(forms.Form):
     def time_period(self):
         return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
 
+
 class RequisitionScheduleForm(forms.Form):
     requisition = forms.ModelChoiceField(
         queryset=all_reqs(),
@@ -109,6 +108,7 @@ class RequisitionScheduleForm(forms.Form):
     num_required = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int, initial=1)
 
 RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
+
 
 class SuggestScheduleForm(forms.Form):
     start_time = forms.DateTimeField(label='Availability Start Time')
@@ -186,6 +186,7 @@ def find_times_post(request):
             )
     )
 
+
 def scheduler(request):
     context = dict(
         requisition_formset=RequisitionScheduleFormset(
@@ -197,6 +198,12 @@ def scheduler(request):
         scheduler_form=SuggestScheduleForm(),
     )
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
+
+def new_scheduler(request):
+    context = dict(
+      reqs=all_reqs()
+    )
+    return render_to_response('new_scheduler.html', context)
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
