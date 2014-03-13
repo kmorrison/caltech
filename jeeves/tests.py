@@ -374,8 +374,6 @@ class InterviewScheduleTest(TestCase):
             end_time=datetime(2014, 3, 1, 13, 30),
         )
 
-        interview = models.Interview.object.get(id=interview.id)
-
         assert len(interview.interviewer_set.all()) == 2
 
 
