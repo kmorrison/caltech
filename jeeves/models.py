@@ -34,6 +34,14 @@ class Requisition(models.Model):
     class Meta:
         ordering = ('name',)
 
+
+INTERVIEW_TYPES = [
+    ('os', 'On Site'),
+    ('sp1', 'Screen Phone 1'),
+    ('sp2', 'Screeen Phone 2'),
+    ]
+
+
 DAYS_OF_WEEK = (
     ('0', 'Monday'),
     ('1', 'Tuesday'),
