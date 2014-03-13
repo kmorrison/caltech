@@ -13,3 +13,4 @@ def migrate_rooms(room_req_id):
             type=models.InterviewType.ON_SITE
         )
         room_interviewer.delete()
+    models.Requisition.objects.get(id=room_req_id).delete()
