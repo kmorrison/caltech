@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.contrib import admin
 
@@ -6,8 +8,12 @@ import pytz
 from caltech import settings
 
 
-class InterviewType(object):
+class Interview(models.Model):
+    room = models.ForeignKey('Room')
+    type = models.IntegerField()
 
+
+class InterviewType(object):
     ON_SITE = 1
     SKYPE = 2
 
@@ -25,10 +31,10 @@ class InterviewType(object):
 
 
 class Interviewer(models.Model):
-
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
+    interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
 
     def __unicode__(self):
         return self.display_name
@@ -42,7 +48,6 @@ class Interviewer(models.Model):
 
 
 class Room(models.Model):
-
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
@@ -58,8 +63,8 @@ class Room(models.Model):
     class Meta:
         ordering = ('display_name',)
 
-class Requisition(models.Model):
 
+class Requisition(models.Model):
     name = models.CharField(max_length=256)
     interviewers = models.ManyToManyField(Interviewer, related_name='requisitions')
 
@@ -68,6 +73,14 @@ class Requisition(models.Model):
 
     class Meta:
         ordering = ('name',)
+
+
+class ScheduledInterview(models.Model):
+    interview = models.ForeignKey(Interview)
+    interviewer = models.ForeignKey(Interviewer)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
 
 DAYS_OF_WEEK = (
     ('0', 'Monday'),
@@ -79,8 +92,8 @@ DAYS_OF_WEEK = (
     ('6', 'Sunday'),
 )
 
-class Preference(models.Model):
 
+class Preference(models.Model):
     interviewer = models.ForeignKey('Interviewer')
 
     start_time = models.TimeField()
@@ -105,19 +118,26 @@ class Preference(models.Model):
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
 
+
 class PreferenceInline(admin.TabularInline):
     model = Preference
 
+
 class InterviewerAdmin(admin.ModelAdmin):
     inlines = [RequisitionInline, PreferenceInline]
+
 
 class RequisitionAdmin(admin.ModelAdmin):
     inlines = [RequisitionInline]
     exclude = ('interviewers',)
 
+
 class PreferenceAdmin(admin.ModelAdmin):
     list_display = ['interviewer']
+
 
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
+admin.site.register(Room)
+admin.site.register(ScheduledInterview)
