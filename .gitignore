@@ -4,3 +4,4 @@
 *.db
 *.swp
 *secret.py
+.DS_Store
