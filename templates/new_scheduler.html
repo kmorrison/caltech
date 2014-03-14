@@ -22,8 +22,12 @@
   </div>
 
   <div class="form-sec type">
-    <h3>Type</h3>
+    <h3>Interview Type</h3>
     <select multiple data-placeholder="Pick a Interview Type" class="chosen-select">
+      <option></option>
+      {% for itype in itypes %}
+        <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
+      {% endfor %}
     </select>
   </div>
 
@@ -47,7 +51,7 @@
     <select multiple data-placeholder="Add a Start Time" class="chosen-select">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti }}>{{ ti }}</option>
+        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
@@ -57,13 +61,10 @@
     <select multiple data-placeholder="Add a End Time" class="chosen-select">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti }}>{{ ti }}</option>
+        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
-    
-    {{requisition_formset.as_p}}
-    {{scheduler_form.as_p}}
     <input type="submit" value="Submit"/>
 </form>
 </div>

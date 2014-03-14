@@ -401,11 +401,50 @@ class InterviewTypeTest(TestCase):
 
     def _assert_are_flags_set(self, on_site_type, expected, *flags):
         self.assertEqual(
-            models.InterviewType.are_flags_set(
+                models.InterviewType.are_flags_set(
                 on_site_type,
                 *flags
             ),
             expected
         )
 
+class PersistInterviewTest(TestCase):
 
+    def test_that_we_can_persist_interviews(self):
+        room = models.Room.objects.create(type=1)
+        interviewer = models.Interviewer.objects.create(name='malcolm', domain='reynolds.com')
+
+        interview_info = {
+            'start_time': datetime.now(),
+            'end_time': datetime.now(),
+            'room_id': room.id,
+            'interviewer_id': interviewer.id,
+            'candidate_name': 'bob'
+        }
+        interview_id = schedule_calculator.persist_interview(
+            [interview_info]
+        )
+
+        interview = models.Interview.objects.get(id=interview_id)
+        self.assertEqual(interview.room.id, room.id)
+        self.assertEqual(interview.candidate_name, interview_info['candidate_name'])
+        interview_slot = interview.interviewslot_set.all()[0]
+        self.assertEqual(interview_slot.interviewer.id, interviewer.id)
+
+
+class GetInterviewTest(TestCase):
+
+    def test_get_interview(self):
+        room = models.Room.objects.create(type=1)
+        interviewer = models.Interviewer.objects.create(name='malcolm', domain='reynolds.com')
+        interview_info = {
+            'start_time': datetime.now(),
+            'end_time': datetime.now(),
+            'room_id': room.id,
+            'interviewer_id': interviewer.id
+        }
+        interview_id = schedule_calculator.persist_interview(
+            [interview_info]
+        )
+        schedule_calculator.get_interview(
+        )

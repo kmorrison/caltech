@@ -26,15 +26,19 @@ def all_interviewers():
     return models.Interviewer.objects.all()
 
 def all_times():
+    hours = [str(num).zfill(2) for num in range(0, 23)]
     minutes = ['00', '15', '30', '45']
-    hours = [str(num) for num in range(1, 13)]
-    periods = ['am', 'pm']
     times = []
-    for period in periods:
-      for hour in hours:
-        for minute in minutes:
-            times.append('%s:%s %s' % (hour, minute, period))
+    for hour in hours:
+      for minute in minutes:
+          times.append(models.TimeChoice('{hour}:{minute}:00'.format(hour=hour, minute=minute)))
     return times
+
+def all_interview_types():
+    return [
+      models.InterviewTypeChoice(models.InterviewType.ON_SITE),
+      models.InterviewTypeChoice(models.InterviewType.SKYPE),
+    ]
 
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
@@ -210,8 +214,28 @@ def scheduler(request):
     )
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
+def interview_post(request):
+
+    interview_form = dict(request.POST)
+    del interview_form['csrfmiddlewaretoken']
+    interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
+    for interview_slot in interviews:
+        interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
+        interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
+        interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
+
+        interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
+
+        # TODO: Get the name from the form
+        interview_slot['candidate_name'] = 'bob'
+
+    schedule_calculator.persist_interview(interviews)
+    return scheduler(request)
+
+
 def new_scheduler(request):
     context = dict(
+      itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times()
     )
@@ -261,7 +285,6 @@ def scheduler_post(request):
             time_period=scheduler_form.time_period,
             possible_break=scheduler_form.possible_break,
     )
-
     return render(
             request,
             'scheduler.html',
