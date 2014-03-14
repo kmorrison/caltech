@@ -1,5 +1,6 @@
 from datetime import timedelta
 import collections
+import heapq
 import itertools
 import random
 
@@ -94,9 +95,14 @@ def get_all_rooms(time_period):
     return calendar_client.get_calendars(all_rooms, time_period).interview_calendars
 
 def get_preferences(interviewers, time_period):
-    # WARNING: N DB queries
     preferences = calendar_client.get_calendars(
-        [models.InterviewerStruct(address=interviewer.interviewer.preferences_address) for interviewer in interviewers],
+        [
+            models.InterviewerStruct(
+                external_id=interviewer.interviewer.preferences_address,
+                address=interviewer.interviewer.address
+            )
+            for interviewer in interviewers
+        ],
         time_period,
     )
     return preferences
@@ -195,7 +201,10 @@ def try_order_with_anchor(possible_order, anchor_index):
 
 def calculate_preference_scores(interview_slots, preference_calendars):
     return [
-        _preference_score(interview_slot, preference_calendars.get_interviewer(_preferencize_address(interview_slot.interviewer)))
+        _preference_score(
+            interview_slot,
+            preference_calendars.get_interviewer(interview_slot.interviewer),
+        )
         for interview_slot in interview_slots
     ]
 
@@ -298,7 +307,7 @@ def possible_interview_chunks(free_times):
     """Given a list of free times, yield them in 45 minute chunks."""
     possible_free_times = filter_free_times_for_length(free_times)
 
-    for free_time in possible_free_times:
+    for free_time in free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
 

@@ -38,12 +38,18 @@ class Interviewer(models.Model):
     display_name = models.CharField(max_length=256)
     interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
 
+    preferences_address = models.CharField(max_length=256, null=True, blank=True)
+
     def __unicode__(self):
         return self.display_name
 
     @property
     def address(self):
         return "%s@%s" % (self.name, self.domain)
+
+    @property
+    def external_id(self):
+        return self.address
 
     class Meta:
         ordering = ('display_name',)
@@ -63,14 +69,14 @@ class Room(models.Model):
         return "%s@%s" % (self.name, self.domain)
 
     @property
-    def preferences_address(self):
-        return "%s.interviews@%s" % (self.name, self.domain)
+    def external_id(self):
+        return self.address
 
     class Meta:
         ordering = ('display_name',)
 
 
-InterviewerStruct = namedtuple('InterviewerStruct', 'address')
+InterviewerStruct = namedtuple('InterviewerStruct', ['address', 'external_id'])
 
 
 class Requisition(models.Model):

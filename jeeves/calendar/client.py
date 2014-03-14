@@ -24,7 +24,7 @@ class CalendarQuery(object):
         return dict(
                 timeMin=lib.format_datetime_utc(self.time_period.start_time),
                 timeMax=lib.format_datetime_utc(self.time_period.end_time),
-                items=[dict(id=interviewer.address) for interviewer in self.interviewers],
+                items=[dict(id=interviewer.external_id) for interviewer in self.interviewers],
         )
 
 
@@ -77,9 +77,9 @@ class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
         calendars = service_response['calendars']
-        self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.address]['busy'])
+        self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.external_id]['busy'])
                 for interviewer in calendar_query.interviewers
-                if interviewer.address in calendars
+                if interviewer.external_id in calendars
         ]
         self._memoize_lookup = {}
 
