@@ -388,7 +388,8 @@ class _InterviewGetter(object):
                 'start_time': interview_slot.start_time,
                 'end_time': interview_slot.end_time,
                 'candidate_name': interview_slot.interview.candidate_name,
-                'day_of_week': interview_slot.start_time.weekday()
+                'day_of_week': interview_slot.start_time.weekday(),
+                'interview_type': models.InterviewTypeChoice(interview_slot.interview.type).display_string,
             }
 
             for req in interview_slot.interviewer.requisitions.all():
@@ -419,7 +420,7 @@ def get_all_req_to_interviewers():
 
     for req in reqs:
         req_to_interviewers_map[req.name] = [
-            interviewer.name for interviewer in req.interviewers.all()
+            interviewer.display_name for interviewer in req.interviewers.all()
         ]
 
     return req_to_interviewers_map

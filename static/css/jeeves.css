@@ -510,6 +510,22 @@ nav a{
 	background: #7F7F7F;
 }
 
+ul{
+  list-style-type: none;
+  padding:0;
+  margin:0;  
+}
+
+#tracker-ul li{
+  list-style-type: none;
+  padding:0;
+  margin:0;  
+}
+
+.tracker-interview-group{
+  padding:18px;
+}
+
 .tracker-container{
   width: 100%;
   border:#fafafa 1px solid;
@@ -532,7 +548,7 @@ nav a{
 
 
 .tracker-container td{
-  padding:18px;
+  padding:5px;
 }
 
 .tracker-day{
@@ -550,6 +566,11 @@ nav a{
   background: #fafafa;
   position: relative;
   cursor: pointer;
+  width: 16%;
+}
+
+.tracker-person{
+  width:20%;
 }
 
 .tracker-cat{
@@ -572,4 +593,8 @@ nav a{
     border: 2px solid #999;
     display: none;
     z-index: 3;
+}
+
+#interviewerSearchInput {
+  width: 300px;
 }
