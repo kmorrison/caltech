@@ -26,15 +26,19 @@ def all_interviewers():
     return models.Interviewer.objects.all()
 
 def all_times():
+    hours = [str(num).zfill(2) for num in range(0, 23)]
     minutes = ['00', '15', '30', '45']
-    hours = [str(num) for num in range(1, 13)]
-    periods = ['am', 'pm']
     times = []
-    for period in periods:
-      for hour in hours:
-        for minute in minutes:
-            times.append('%s:%s %s' % (hour, minute, period))
+    for hour in hours:
+      for minute in minutes:
+          times.append(models.TimeChoice('{hour}:{minute}:00'.format(hour=hour, minute=minute)))
     return times
+
+def all_interview_types():
+    return [
+      models.InterviewTypeChoice(models.InterviewType.ON_SITE),
+      models.InterviewTypeChoice(models.InterviewType.SKYPE),
+    ]
 
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
@@ -225,6 +229,7 @@ def interview_post(request):
 
 def new_scheduler(request):
     context = dict(
+      itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times()
     )

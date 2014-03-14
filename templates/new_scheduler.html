@@ -17,8 +17,12 @@
 
 <div id="main-form">
 <form action="/scheduler_post/" method="post">{% csrf_token %}
-    <em>Type</em>
-    <select data-placeholder="Pick a Interview Type" class="chosen-select" style="width:350px;">
+    <em>Interview Type</em>
+    <select data-placeholder="Pick an Interview Type" class="chosen-select" style="width:350px;">
+      <option></option>
+      {% for itype in itypes %}
+        <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
+      {% endfor %}
     </select>
   </div>
 
@@ -42,7 +46,7 @@
     <select data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti }}>{{ ti }}</option>
+        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
@@ -52,13 +56,10 @@
     <select data-placeholder="Add a End Time" class="chosen-select" style="width:350px">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti }}>{{ ti }}</option>
+        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
-    
-    {{requisition_formset.as_p}}
-    {{scheduler_form.as_p}}
     <input type="submit" value="Submit"/>
 </form>
 </div>
