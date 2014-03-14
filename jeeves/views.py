@@ -10,6 +10,7 @@ import operator
 
 from django import forms
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -251,7 +252,7 @@ def interview_post(request):
         interview_slot['candidate_name'] = 'bob'
 
     schedule_calculator.persist_interview(interviews)
-    return redirect('new_scheduler', success=1)
+    return redirect('/new_scheduler?success=1')
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
