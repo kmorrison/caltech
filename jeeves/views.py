@@ -535,7 +535,9 @@ def _dump_schedules_into_json(schedules):
 def _dump_interview_slot_to_dictionary(slot):
     time_format = "%I:%M"
     data = slot.__dict__
+    data['start_datetime'] = time.mktime(data['start_time'].timetuple())
+    data['end_datetime'] = time.mktime(data['end_time'].timetuple())
     data['start_time'] = data['start_time'].strftime(time_format)
     data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    return data 
 
