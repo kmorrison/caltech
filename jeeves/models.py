@@ -14,6 +14,12 @@ class Interview(models.Model):
     candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
+    recruiter = models.ForeignKey(
+        'Recruiter',
+        default=None,
+        null=True,
+        blank=True
+    )
 
 
 class InterviewType(object):
@@ -170,6 +176,26 @@ class Preference(models.Model):
         return lib.TimePeriod(preference_start_time, preference_end_time)
 
 
+class Recruiter(models.Model):
+    name = models.CharField(max_length=256)
+    domain = models.CharField(max_length=256)
+    display_name = models.CharField(max_length=256)
+
+    def __unicode__(self):
+        return self.display_name
+
+    @property
+    def address(self):
+        return "%s@%s" % (self.name, self.domain)
+
+    @property
+    def external_id(self):
+        return self.address
+
+    class Meta:
+        ordering = ('display_name',)
+
+
 class RequisitionInline(admin.TabularInline):
     model = Requisition.interviewers.through
 
@@ -196,3 +222,4 @@ admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
 admin.site.register(Room)
 admin.site.register(InterviewSlot)
+admin.site.register(Recruiter)
