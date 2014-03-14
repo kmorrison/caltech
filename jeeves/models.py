@@ -9,6 +9,7 @@ from datetime import datetime
 import pytz
 from caltech import settings
 
+DEFAULT_MAX_INTERVIEWS = 3
 
 class Interview(models.Model):
     candidate_name = models.CharField(max_length=256)
@@ -79,6 +80,13 @@ class Interviewer(models.Model):
     interviews = models.ManyToManyField(Interview, through='InterviewSlot')
 
     preferences_address = models.CharField(max_length=256, null=True, blank=True)
+    max_interviews_per_week = models.IntegerField(null=True)
+
+    @property
+    def real_max_interviews(self):
+        if self.max_interviews_per_week is None:
+            return DEFAULT_MAX_INTERVIEWS
+        return self.max_interviews_per_week
 
     def __unicode__(self):
         return self.display_name
