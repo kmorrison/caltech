@@ -15,7 +15,7 @@
 {% block body %}
 
 <div id="main-form">
-<form action="/new_scheduler_post/" method="post">{% csrf_token %}
+<form id="scheduler_form">{% csrf_token %}
   <div class="form-sec candidate-name">
     <h3>Candidate Name</h3>
     <input type="text" name="candidiate_name" class="candidate-name">
@@ -68,5 +68,7 @@
     <input type="submit" value="Submit"/>
 </form>
 </div>
+
+<div id="result"></div>
 {% endblock %}
 
