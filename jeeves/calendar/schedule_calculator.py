@@ -16,6 +16,9 @@ IDEAL_PADDING_TIME = 15  # Minutes
 BREAK = 'Break'
 
 
+class NoInterviewersAvailableError(Exception): pass
+
+
 class InterviewSlot(object):
     """Object representing an interviewer doing an interview at a certain time."""
     def __init__(
@@ -70,6 +73,36 @@ class Interview(object):
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
+def _prune_interviewers_for_capacity(interviewers, time_period):
+    week_start = time_period.start_time.date().isocalendar()[1]
+    week_end = time_period.end_time.date().isocalendar()[1]
+    assert week_start == week_end
+    pruned_interviewers = {}
+    for interviewer in interviewers:
+        interview_slots = interviewer.interviewer.interviewslot_set.all()
+        interviews = 0
+        for interview_slot in interview_slots:
+            week = interview_slot.start_time.date().isocalendar()[1]
+            if week == week_start:
+                interviews += 1
+        if interviewer.interviewer.real_max_interviews is None:
+            raise ValueError("Max interviews cannot be None, call an engineer")
+
+        if interviews < interviewer.interviewer.real_max_interviews:
+            pruned_interviewers[interviewer.interviewer.address] = (interviewer, interviews)
+    return pruned_interviewers
+
+def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewers):
+    interviewer_set = set([interviewer.interviewer.address for interviewer in interviewers])
+    pruned_interviewer_groups = []
+    for interviewer_group in interviewer_groups:
+        igroup_interviewers = interviewer_group.interviewers
+        igroup_interviewers = [interviewer for interviewer in igroup_interviewers if interviewer.interviewer.address in interviewer_set]
+        if len(igroup_interviewers) < interviewer_group.num_required:
+            raise NoInterviewersAvailableError
+        pruned_interviewer_groups.append(InterviewerGroup(num_required=interviewer_group.num_required, interviewers=igroup_interviewers))
+    return pruned_interviewer_groups
+
 def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
     """Exposed method for calculating new interviews.
 
@@ -82,6 +115,11 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
     interviewers = list(itertools.chain.from_iterable(
         interviewer_group.interviewers for interviewer_group in interviewer_groups
     ))
+    interviewer_to_num_interviews_map = _prune_interviewers_for_capacity(interviewers, time_period)
+    if not interviewer_to_num_interviews_map:
+        raise NoInterviewersAvailableError
+    interviewers = zip(*interviewer_to_num_interviews_map.values())[0]
+    interviewer_groups = _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewers)
     preferences = get_preferences(interviewers, time_period)
 
     for possible_schedule in possible_schedules(
@@ -96,6 +134,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             interviewers,
             rooms,
             preferences,
+            interviewer_to_num_interviews_map,
         )
 
         # Add the schedule if it meets our validity heuristics
@@ -159,7 +198,7 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
                 order_with_break = list(possible_order)
                 order_with_break.insert(i, break_interview_slot)
                 validated_order = try_order_with_anchor(order_with_break, anchor_index=i)
-                if validated_order is not None:
+                if validated_order is not None and _validate_interview_times(validated_order, time_period):
                     yield validated_order
 
         else:
@@ -172,8 +211,16 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
                 )
 
                 validated_order = try_order_with_anchor(possible_order, anchor_index=0)
-                if validated_order is not None:
+                if validated_order is not None and _validate_interview_times(validated_order, time_period):
                     yield validated_order
+
+
+def _validate_interview_times(validated_order, time_period):
+    if validated_order[0].start_time < time_period.start_time:
+        return False
+    if validated_order[-1].end_time > time_period.end_time:
+        return False
+    return True
 
 
 def try_order_with_anchor(possible_order, anchor_index):
@@ -271,7 +318,7 @@ def _preference_score(interviewer_slot, preferences_calendar):
     return 0
 
 
-def create_interview(possible_schedule, interviewers, rooms, preferences):
+def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map):
     if possible_schedule is None:
         return None
 
@@ -307,6 +354,13 @@ def create_interview(possible_schedule, interviewers, rooms, preferences):
     for interview_slot, score in zip(possible_schedule, interviewer_schedule_padding_scores):
         interview_slot.gets_buffer = bool(score)
 
+    num_interviews_score = 50
+    for interview_slot in possible_schedule:
+        num_interviews = interviewer_to_num_interviews_map.get(interview_slot.interviewer, (None, 0))[1]
+        num_interviews_score -= (5 * num_interviews)
+        interview_slot.number_of_interviews = num_interviews
+
+
     # TODO: Calculate priority based on interview padding
     return Interview(
         interview_slots=possible_schedule,
@@ -315,6 +369,7 @@ def create_interview(possible_schedule, interviewers, rooms, preferences):
             room_score
             + preference_score
             + interviewer_schedule_padding_score
+            + num_interviews_score
         )
     )
 
