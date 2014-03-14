@@ -17,6 +17,7 @@ from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
 
 from caltech import secret
+from caltech import settings
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -336,11 +337,12 @@ def scheduler_post(request):
 def get_time_period(start_time, end_time, date):
     def convert_form_datetime_to_sql_datetime(date, time):
       date_time = datetime.strptime("{date} {time}".format(date=date, time=time), "%m/%d/%Y %H:%M:%S")
-      return date_time.strftime(TIME_FORMAT)
+      date_time = date_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+      return date_time
 
     start_datetime = convert_form_datetime_to_sql_datetime(date, start_time)
     end_datetime = convert_form_datetime_to_sql_datetime(date, end_time)
-    return (start_datetime, end_datetime)
+    return TimePeriod(start_datetime, end_datetime)
 
 def error_check_scheduler_form_post(form):
     error_fields = []
@@ -365,7 +367,8 @@ def new_scheduler_post(request):
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    interviewer_groups = get_interviewer_set(form_data['interview_type'], form_data['requisition'])
+    requisition = models.Requisition.objects.filter(name='Backend')[0]
+    interviewer_groups = get_interview_groups_with_requirements(requisition, int(form_data['interview_type']))
     time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
 
     calendar_responses = [
@@ -389,13 +392,13 @@ def new_scheduler_post(request):
             time_period=time_period,
     )
 
-    return render(
-            request,
-            'scheduler.html',
-            dict(
-                schedules=schedules,
-            )
-    )
+    scheduler_post_result = {
+        'form_is_valid': form_is_valid,
+        'data': _dump_schedules_into_json(schedules)
+    }
+
+    return HttpResponse(simplejson.dumps(scheduler_post_result), mimetype='application/json')
+
 
 def _dump_schedules_into_json(schedules):
     data = []
@@ -412,7 +415,7 @@ def _dump_schedules_into_json(schedules):
 
         data.append(schedule_data)
 
-    return simplejson.dumps(data)
+    return data
 
 def _dump_interview_slot_to_dictionary(slot):
     time_format = "%I:%M"

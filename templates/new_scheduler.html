@@ -58,7 +58,7 @@
 
   <div class="form-sec end">
     <h3>End Time</h3>
-    <select name='end_time' data-placeholder=" " class="chosen-select">
+    <select name='end_time' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
