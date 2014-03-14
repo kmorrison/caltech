@@ -1,30 +1,32 @@
+from jeeves import models
+from jeeves.models import InterviewType
 
 
 INTERVIEW_MAPPING_RULES = {
         'Backend':{
-            'os':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp1':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp2':[(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
             },
         'Ads':{
-            'os':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp1':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp2':[(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
             },
         'Engineer Manager':{
-            'os':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp1':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp2':[(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
             },
         'Search':{
-            'os':[(2, 'Search'), (2, 'Stoppelgangers')],
-            'sp1':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp2':[(2, 'Search'), (2, 'Stoppelgangers')],
+            InterviewType.ON_SITE: [(2, 'Search'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Search'), (2, 'Stoppelgangers')],
             },
         'Spam':{
-            'os':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp1':[(2, 'Backend'), (2, 'Stoppelgangers')],
-            'sp2':[(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
             },
         'Data Scientist':{},
         'Web Dev':{},
@@ -32,3 +34,19 @@ INTERVIEW_MAPPING_RULES = {
         'Sys Infra':{},
         }
 
+
+def get_interviewers(requisition):
+    req_rules = INTERVIEW_MAPPING_RULES.get(requisition.name)
+
+    if not req_rules:
+        return None
+
+    interviewers = {}
+    for interview_type, rules in req_rules.iteritems():
+        interviewer_selection = {}
+        for number, req_name in rules:
+            req = models.Requisition.objects.filter(name__startswith=req_name)[0]
+            interviewer_selection[req.name] = req.interviewers.all()
+        interviewers[interview_type] = interviewer_selection
+
+    return interviewers
