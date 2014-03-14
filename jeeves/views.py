@@ -1,4 +1,6 @@
 from datetime import datetime
+from itertools import groupby
+import operator
 
 from django import forms
 from django.shortcuts import render
@@ -6,6 +8,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from jeeves import models
+from jeeves import rules
 from jeeves.calendar import schedule_calculator
 from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
@@ -85,6 +88,18 @@ def get_interviewer_groups(formset, also_include=None, dont_include=None):
     interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
     return interviewer_groups
 
+def get_interview_groups_with_requirements(requisition, interview_type, also_include=None, dont_include=None):
+    requirements = rules.get_interview_requirements(requisition, interview_type)
+    interviewer_groups = rules.get_interview_group(requirements)
+
+    # Reduce interviewer sets
+    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
+    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
+        for _, other_interviewers in interviewer_groups[i+1:]:
+            other_interviewers.difference_update(interviewers)
+
+    interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
+    return interviewer_groups
 
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
@@ -223,15 +238,31 @@ def interview_post(request):
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
-
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
-
         # TODO: Get the name from the form
         interview_slot['candidate_name'] = 'bob'
 
     schedule_calculator.persist_interview(interviews)
     return scheduler(request)
 
+def tracker(request):
+    tracker_dict = {
+    for group, interviewer_list in tracker_dict.iteritems():
+        for interviewer in interviewer_list:
+            interviews = interviewer['interviews']
+            interviews.sort(key=operator.itemgetter('day_of_week'))
+            interviews_dict_by_day_of_week = {}
+            for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
+                grouped_interview_list = list(interview_list)
+                interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
+            interviewer['interviews'] = interviews_dict_by_day_of_week
+    return render(
+            request,
+            'tracker.html',
+            dict(
+                tracker_dict = tracker_dict
+            )
+    )              
 
 def new_scheduler(request):
     context = dict(
