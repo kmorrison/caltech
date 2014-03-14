@@ -23,7 +23,7 @@
 
   <div class="form-sec type">
     <h3>Interview Type</h3>
-    <select name='interview_type' multiple class="chosen-select">
+    <select name='interview_type' data-placehoder=" " multiple class="chosen-select">
       <option></option>
       {% for itype in itypes %}
         <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
