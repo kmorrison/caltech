@@ -1,5 +1,6 @@
 import simplejson
 import pytz
+import time
 
 from datetime import date
 from datetime import datetime
@@ -268,6 +269,9 @@ def tracker(request):
         start_date = date.fromtimestamp(request.GET['start_date'])
         end_date = date.fromtimestamp(request.GET['end_date'])
 
+    last_week_start = start_date - timedelta(days=7)
+    next_week_start = start_date + timedelta(days=7)
+
     tracker_dict_2 = schedule_calculator.get_interviews_with_all_interviewers(
         start_date,
         end_date
@@ -374,7 +378,9 @@ def tracker(request):
             request,
             'tracker.html',
             dict(
-                tracker_dict = tracker_dict
+                tracker_dict = tracker_dict,
+                last_week_start = time.mktime(last_week_start.timetuple()),
+                next_week_start = time.mktime(next_week_start.timetuple()),
             )
     )
 
@@ -529,7 +535,9 @@ def _dump_schedules_into_json(schedules):
 def _dump_interview_slot_to_dictionary(slot):
     time_format = "%I:%M"
     data = slot.__dict__
+    data['start_datetime'] = time.mktime(data['start_time'].timetuple())
+    data['end_datetime'] = time.mktime(data['end_time'].timetuple())
     data['start_time'] = data['start_time'].strftime(time_format)
     data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    return data 
 
