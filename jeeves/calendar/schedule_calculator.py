@@ -3,6 +3,7 @@ import collections
 import heapq
 import itertools
 import random
+import time
 
 from caltech import secret
 from jeeves import models
@@ -40,6 +41,27 @@ class InterviewSlot(object):
         time_format = "%I:%M"
         return "%s - %s" % (self.start_time.strftime(time_format), self.end_time.strftime(time_format))
 
+    @property
+    def display_start_time(self):
+        return self.start_time.strftime("%I:%M")
+
+    @property
+    def display_end_time(self):
+        return self.end_time.strftime("%I:%M")
+
+    @property
+    def display_date(self):
+        return self.start_time.date().strftime("%x")
+
+    @property
+    def start_datetime(self):
+        return time.mktime(self.start_time.timetuple())
+
+    @property
+    def end_datetime(self):
+        return time.mktime(self.end_time.timetuple())
+    
+    
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
@@ -88,10 +110,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
     return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
 
 def get_all_rooms(time_period):
-    room_id = getattr(secret, 'room_id', None)
-    if room_id is None:
-        return None
-    all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
+    all_rooms = models.Room.objects.all()
     return calendar_client.get_calendars(all_rooms, time_period).interview_calendars
 
 def get_preferences(interviewers, time_period):

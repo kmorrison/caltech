@@ -32,11 +32,46 @@ class InterviewType(object):
         return value & type == value
 
 
+class InterviewTypeChoice(object):
+
+  def __init__(self, interview_type):
+      self.interview_type = interview_type
+
+  @property
+  def display_string(self):
+    return {
+      InterviewType.ON_SITE: 'On site',
+      InterviewType.SKYPE: 'SPI',
+    }.get(self.interview_type)
+
+
+class TimeChoice(object):
+    # Use for display time purposes
+
+  def __init__(self, time_value):
+    self.time_value = time_value
+
+  @property
+  def display_string(self):
+      hour_string = self.time_value[:2]
+      if (int(hour_string)/12==0):
+        hour = str(int(hour_string))
+        period = 'am'
+        if hour_string == '00':
+          hour = '12'
+      else:
+        hour = str(int(hour_string) - 12)
+        period = 'pm'
+
+      minute = self.time_value[3:5]
+      return '{hour}:{minute} {period}'.format(hour=hour, minute=minute, period=period)
+
+
 class Interviewer(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
+    interviews = models.ManyToManyField(Interview, through='InterviewSlot')
 
     preferences_address = models.CharField(max_length=256, null=True, blank=True)
 
@@ -90,11 +125,12 @@ class Requisition(models.Model):
         ordering = ('name',)
 
 
-class ScheduledInterview(models.Model):
+class InterviewSlot(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
     start_time = models.TimeField()
     end_time = models.TimeField()
+    date = models.DateField()
 
 
 DAYS_OF_WEEK = (
@@ -155,4 +191,4 @@ admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
 admin.site.register(Room)
-admin.site.register(ScheduledInterview)
+admin.site.register(InterviewSlot)
