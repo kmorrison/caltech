@@ -10,6 +10,7 @@ $(document).ready(function() {
                var schedules = data.data; 
                $.each(schedules, function(i, schedule) {
                  var template = $('#result .template').clone().removeClass('template'); 
+                 template.find('.recruiter-select').addClass('chosen-select').chosen({max_selected_options:1});
                  var roomTime = schedule.room.start_time + ' ~ ' + schedule.room.end_time + schedule.room.interviewer;
 
                  template.find('.room').text(roomTime);
