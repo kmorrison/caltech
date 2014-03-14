@@ -49,7 +49,7 @@
 .schedule-item {
   list-style-type: none;
   width: 400px;
-  height: 160px;
+  height: 180px;
   border: 1px solid #999;
   background: #eceddf;
   padding: 10px;
@@ -68,7 +68,11 @@
   color: #639ba3; 
 }
 
-.schedule-item button {
+.schedule-item .chosen-container {
+  width: 150px !important;
+}
+
+.schedule-item .cta {
   position: absolute;
   right: 10px;
   bottom: 10px;
