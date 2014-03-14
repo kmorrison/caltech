@@ -218,12 +218,11 @@ def interview_post(request):
 
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
-    interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))    
+    interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
-        interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time'])) 
+        interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
-        interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]) 
-        import pdb; pdb.set_trace() 
+        interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0])
 
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room'])
 
@@ -279,7 +278,6 @@ def scheduler_post(request):
             time_period=scheduler_form.time_period,
             possible_break=scheduler_form.possible_break,
     )
-    import pdb; pdb.set_trace()
     return render(
             request,
             'scheduler.html',
