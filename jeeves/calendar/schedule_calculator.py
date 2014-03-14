@@ -448,8 +448,13 @@ def change_interviewer(interview_slot_id, interviewer_id):
     slot.interviewer_id = interviewer_id
     slot.save()
 
+
 def delete_interview(interview_id):
     interview = models.Interview.objects.get(id=interview_id)
     for slot in interview.interviewslot_set.all():
         slot.delete()
     interview.delete()
+
+
+def get_all_recruiters():
+    return models.Recruiter.objects.all()

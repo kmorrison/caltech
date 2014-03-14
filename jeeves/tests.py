@@ -548,3 +548,13 @@ class DeleteInterviewTest(TestCase):
             ).exists(),
             False
         )
+
+class GetAllRecruiters(TestCase):
+    def test_get_all_recruiters(self):
+        recruiter = models.Recruiter.objects.create(
+            name='anthony',
+            domain='@isking.com',
+            display_name='Anthony is King'
+        )
+        recruiters = schedule_calculator.get_all_recruiters()
+        self.assertIn(recruiter, recruiters)
