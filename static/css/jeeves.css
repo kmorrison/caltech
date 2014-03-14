@@ -523,7 +523,7 @@ ul{
 }
 
 .tracker-interview-group{
-  padding:18px;
+  padding:10 10 10 0;
 }
 
 .tracker-container{
@@ -590,10 +590,10 @@ ul{
     color: #FFF;
     clear: both;
     float: none;
-    width: 200px;
+    width: 250px;
     background: #000;
     padding: 10px;
-    font: 13px Arial, Helvetica, sans-serif;
+    font: 12px Arial, Helvetica, sans-serif;
     -moz-border-radius: 5px;
     border-radius: 5px;
     -webkit-border-radius: 5px;
@@ -602,8 +602,17 @@ ul{
     border: 2px solid #999;
     display: none;
     z-index: 3;
+    text-align: left;
+}
+
+.hovercard p{
+  padding-bottom:12px;
 }
 
 #interviewerSearchInput {
   width: 300px;
+}
+
+a{
+  text-color: #41b7d8;
 }
