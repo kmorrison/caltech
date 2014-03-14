@@ -29,7 +29,7 @@
 <ul class="possible_sched">
     {% for schedule in schedules %}
     <li>
-        <li>
+        <div>
             <form action="/interview_post/" method="post">{% csrf_token %}
                 {% for interview_slot in schedule.interview_slots %}
                 <div style="display:none">
@@ -41,7 +41,7 @@
                 {% endfor %} 
                 <input type="submit" value="Schedule Interviews"/>
             </form>
-        </li>
+        </div>
     <table class="possible_sched">
         {% if schedule.room %}
         <tr>
