@@ -412,56 +412,68 @@ class InterviewTypeTest(TestCase):
 class PersistInterviewTest(TestCase):
 
     def test_that_we_can_persist_interviews(self):
-        room = models.Room.objects.create(type=1)
-        interviewer = models.Interviewer.objects.create(name='malcolm', domain='reynolds.com')
+        interview_data = create_interview_data()
 
-        interview_info = {
-            'start_time': datetime.now(),
-            'end_time': datetime.now(),
-            'room_id': room.id,
-            'interviewer_id': interviewer.id,
-            'candidate_name': 'bob'
-        }
-        interview_id = schedule_calculator.persist_interview(
-            [interview_info]
+        interview = models.Interview.objects.get(
+            id=interview_data['interview_id']
+        )
+        self.assertEqual(interview.room.id, interview_data['room'].id)
+        self.assertEqual(
+            interview.candidate_name,
+            interview_data['interview_info']['candidate_name']
+        )
+        interview_slot = interview.interviewslot_set.all()[0]
+        self.assertEqual(
+            interview_slot.interviewer.id,
+            interview_data['interviewer'].id
         )
 
-        interview = models.Interview.objects.get(id=interview_id)
-        self.assertEqual(interview.room.id, room.id)
-        self.assertEqual(interview.candidate_name, interview_info['candidate_name'])
-        interview_slot = interview.interviewslot_set.all()[0]
-        self.assertEqual(interview_slot.interviewer.id, interviewer.id)
+
+def create_interview_data():
+    room = models.Room.objects.create(type=1)
+    interviewer = models.Interviewer.objects.create(
+        name='malcolm',
+        domain='reynolds.com',
+        display_name='Malcolm'
+    )
+    req = models.Requisition.objects.create(name='Mechanic')
+    req.interviewers.add(interviewer)
+
+    interview_info = {
+        'start_time': datetime(2014, 5, 3, 12, 30, 0, tzinfo=pytz.timezone(
+            'US/Pacific'
+        )),
+        'end_time': datetime(2014, 5, 3, 13, 15, 0, tzinfo=pytz.timezone(
+            'US/Pacific'
+        )),
+        'room_id': room.id,
+        'interviewer_id': interviewer.id,
+        'candidate_name': 'bob'
+    }
+    interview_id = schedule_calculator.persist_interview(
+        [interview_info]
+    )
+
+    interview_slots = models.Interview.objects.get(id=interview_id).interviewslot_set.all()
+    interview_slot_id = interview_slots[0].id
+    return {
+        'interview_id': interview_id,
+        'room': room,
+        'interview_info': interview_info,
+        'interviewer': interviewer,
+        'req': req,
+        'interview_slot_id': interview_slot_id,
+    }
 
 
 class GetInterviewTest(TestCase):
 
     def test_get_interview(self):
-        room = models.Room.objects.create(type=1)
-        interviewer = models.Interviewer.objects.create(
-            name='malcolm',
-            display_name='Malcolm',
-            domain='reynolds.com'
-        )
-        req = models.Requisition.objects.create(name='Mechanic')
-        req.interviewers.add(interviewer)
-
-        interview_info = {
-            'start_time': datetime(2014, 5, 3, 12, 30, 0, tzinfo=pytz.timezone(
-                'US/Pacific'
-            )),
-            'end_time': datetime(2014, 5, 3, 13, 15, 0, tzinfo=pytz.timezone(
-                'US/Pacific'
-            )),
-            'room_id': room.id,
-            'interviewer_id': interviewer.id,
-            'candidate_name': 'bob'
-        }
+        interview_data = create_interview_data()
+        room = interview_data['room']
+        interview_info = interview_data['interview_info']
         start_of_period = interview_info['start_time'] - timedelta(days=1)
         end_of_period = interview_info['end_time'] + timedelta(days=1)
-
-        schedule_calculator.persist_interview(
-            [interview_info]
-        )
 
         results = schedule_calculator.get_interviews(
             start_of_period,
@@ -478,7 +490,27 @@ class GetInterviewTest(TestCase):
                         'room': room.display_name,
                         'start_time': interview_info['start_time'],
                         'day_of_week': interview_info['start_time'].weekday(),
+                        'interview_slot_id': interview_data['interview_slot_id'],
+                        'interview_id': interview_data['interview_id'],
+                        'interview_type': 'OS'
                     }]
                 }
             }
         )
+
+
+class ChangeInterviewerTest(TestCase):
+    def test_change_interviewer(self):
+        interview_data = create_interview_data()
+        interviewer = models.Interviewer.objects.create(
+            name='king',
+            domain='anthony.com',
+            display_name='King Anthony'
+        )
+        interview_slot_id = interview_data['interview_slot_id']
+        schedule_calculator.change_interviewer(
+            interview_slot_id,
+            interviewer.id
+        )
+        slot = models.InterviewSlot.objects.get(id=interview_slot_id)
+        self.assertEqual(slot.interviewer.id, interviewer.id)
