@@ -387,7 +387,8 @@ class _InterviewGetter(object):
                 'room': interview_slot.interview.room.display_name,
                 'start_time': interview_slot.start_time,
                 'end_time': interview_slot.end_time,
-                'candidate_name': interview_slot.interview.candidate_name
+                'candidate_name': interview_slot.interview.candidate_name,
+                'day_of_week': interview_slot.start_time.weekday()
             }
 
             for req in interview_slot.interviewer.requisitions.all():

@@ -477,6 +477,7 @@ class GetInterviewTest(TestCase):
                         'end_time': interview_info['end_time'],
                         'room': room.display_name,
                         'start_time': interview_info['start_time'],
+                        'day_of_week': interview_info['start_time'].weekday(),
                     }]
                 }
             }
