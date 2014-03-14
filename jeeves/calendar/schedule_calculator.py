@@ -1,7 +1,9 @@
 from datetime import timedelta
 import collections
+import heapq
 import itertools
 import random
+import time
 
 from caltech import secret
 from jeeves import models
@@ -39,6 +41,27 @@ class InterviewSlot(object):
         time_format = "%I:%M"
         return "%s - %s" % (self.start_time.strftime(time_format), self.end_time.strftime(time_format))
 
+    @property
+    def display_start_time(self):
+        return self.start_time.strftime("%I:%M")
+
+    @property
+    def display_end_time(self):
+        return self.end_time.strftime("%I:%M")
+
+    @property
+    def display_date(self):
+        return self.start_time.date().strftime("%x")
+
+    @property
+    def start_datetime(self):
+        return time.mktime(self.start_time.timetuple())
+
+    @property
+    def end_datetime(self):
+        return time.mktime(self.end_time.timetuple())
+    
+    
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
@@ -56,7 +79,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
     interviewers = list(itertools.chain.from_iterable(
         interviewer_group.interviewers for interviewer_group in interviewer_groups
     ))
-    preferences = get_preferences(interviewers)
+    preferences = get_preferences(interviewers, time_period)
 
     for possible_schedule in possible_schedules(
         interviewer_groups,
@@ -90,12 +113,19 @@ def get_all_rooms(time_period):
     all_rooms = models.Room.objects.all()
     return calendar_client.get_calendars(all_rooms, time_period).interview_calendars
 
-def get_preferences(interviewers):
-    # WARNING: N DB queries
-    return dict(
-            (interviewer.interviewer.address, interviewer.interviewer.preference_set.all())
+def get_preferences(interviewers, time_period):
+    preferences = calendar_client.get_calendars(
+        [
+            models.InterviewerStruct(
+                external_id=interviewer.interviewer.preferences_address,
+                address=interviewer.interviewer.address
+            )
             for interviewer in interviewers
+        ],
+        time_period,
     )
+    return preferences
+
 
 def generate_possible_orders_forever(interviewer_groups):
     """Given a grouping of interviews, generate possible schedules."""
@@ -187,11 +217,20 @@ def try_order_with_anchor(possible_order, anchor_index):
 
     return interview_slots
 
-def calculate_preference_scores(interview_slots, preferences):
+
+def calculate_preference_scores(interview_slots, preference_calendars):
     return [
-        _preference_score(interview_slot, preferences.get(interview_slot.interviewer))
+        _preference_score(
+            interview_slot,
+            preference_calendars.get_interviewer(interview_slot.interviewer),
+        )
         for interview_slot in interview_slots
     ]
+
+
+def _preferencize_address(address):
+    i = address.index('@')
+    return address[:i] + '.interviews' + address[i:]
 
 
 def calculate_interviewer_schedule_padding_scores(possible_schedule, interviewer_calendars):
@@ -220,25 +259,18 @@ def calculate_interviewer_schedule_padding_scores(possible_schedule, interviewer
     return padding_scores
 
 
-def _preference_score(interviewer_slot, preferences):
+def _preference_score(interviewer_slot, preferences_calendar):
     if interviewer_slot.interviewer == BREAK:
         return 10
 
-    if not preferences:
-        return 10
+    if not preferences_calendar:
+        return 0
 
     assert interviewer_slot.start_time.date() == interviewer_slot.end_time.date()
-    date = interviewer_slot.start_time.date()
 
-    for preference in preferences:
-        if preference.day != str(interviewer_slot.start_time.weekday()):
-            continue
-
-        if preference.time_period(date).contains(
-            lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)
-        ):
-            return 15
-
+    if preferences_calendar.is_blocked_during(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
+        print 'yay'
+        return 15
     return 0
 
 
@@ -294,7 +326,7 @@ def possible_interview_chunks(free_times):
     """Given a list of free times, yield them in 45 minute chunks."""
     possible_free_times = filter_free_times_for_length(free_times)
 
-    for free_time in possible_free_times:
+    for free_time in free_times:
         potential_time = lib.TimePeriod(free_time.start_time, free_time.start_time + timedelta(minutes=MINUTES_OF_INTERVIEW))
         while potential_time.end_time < free_time.end_time:
 
