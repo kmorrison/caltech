@@ -16,6 +16,7 @@ urlpatterns = patterns('',
 
     url(r'^index/', 'jeeves.views.index'),
     url(r'^new_scheduler/', 'jeeves.views.new_scheduler'),
+    url(r'^new_scheduler_post/', 'jeeves.views.new_scheduler_post'),
     url(r'^scheduler/', 'jeeves.views.scheduler'),
     url(r'^scheduler_post/', 'jeeves.views.scheduler_post'),
     url(r'^interview_post/', 'jeeves.views.interview_post'),

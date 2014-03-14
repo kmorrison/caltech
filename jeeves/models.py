@@ -65,6 +65,8 @@ class TimeChoice(object):
       else:
         hour = str(int(hour_string) - 12)
         period = 'pm'
+        if hour == '0':
+          hour = '12'
 
       minute = self.time_value[3:5]
       return '{hour}:{minute} {period}'.format(hour=hour, minute=minute, period=period)
