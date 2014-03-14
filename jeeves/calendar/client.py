@@ -9,7 +9,7 @@ from caltech import secret
 from . import schedule
 from . import lib
 
-MAX_INTERVIEWERS_IN_QUERY = 20
+MAX_INTERVIEWERS_IN_QUERY = 50
 
 class CalendarQuery(object):
 
@@ -26,6 +26,9 @@ class CalendarQuery(object):
                 timeMax=lib.format_datetime_utc(self.time_period.end_time),
                 items=[dict(id=interviewer.external_id) for interviewer in self.interviewers],
         )
+
+    def __repr__(self):
+        return "%s" % ([inte.external_id for inte in self.interviewers],)
 
 
 class InterviewCalendar(object):

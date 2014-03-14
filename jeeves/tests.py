@@ -536,3 +536,25 @@ class RecruiterTest(TestCase):
             display_name='Anthony is King'
         )
         self.assertEqual(recruiter.name, 'anthony')
+
+
+class DeleteInterviewTest(TestCase):
+    def test_delete_interview(self):
+        interview_data = create_interview_data()
+        schedule_calculator.delete_interview(interview_data['interview_id'])
+        self.assertEqual(
+            models.Interview.objects.filter(
+                id=interview_data['interview_id']
+            ).exists(),
+            False
+        )
+
+class GetAllRecruiters(TestCase):
+    def test_get_all_recruiters(self):
+        recruiter = models.Recruiter.objects.create(
+            name='anthony',
+            domain='@isking.com',
+            display_name='Anthony is King'
+        )
+        recruiters = schedule_calculator.get_all_recruiters()
+        self.assertIn(recruiter, recruiters)

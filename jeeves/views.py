@@ -10,6 +10,7 @@ import operator
 
 from django import forms
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.shortcuts import render_to_response
 from django.shortcuts import redirect
 from django.template import RequestContext
@@ -252,7 +253,7 @@ def interview_post(request):
         interview_slot['candidate_name'] = 'bob'
 
     schedule_calculator.persist_interview(interviews)
-    return scheduler(request)
+    return redirect('/new_scheduler?success=1')
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
@@ -398,10 +399,13 @@ def tracker(request):
     )
 
 def new_scheduler(request):
+    success = 1 if 'success' in request.GET else 0
     context = dict(
       itypes=all_interview_types(),
       reqs=all_reqs(),
-      times=all_times()
+      times=all_times(),
+      success=success,
+      recruiters=schedule_calculator.get_all_recruiters()
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
