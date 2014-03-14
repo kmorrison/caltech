@@ -408,6 +408,7 @@ class InterviewTypeTest(TestCase):
             expected
         )
 
+
 class PersistInterviewTest(TestCase):
 
     def test_that_we_can_persist_interviews(self):

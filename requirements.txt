@@ -5,3 +5,4 @@ mock==1.0.1
 python-gflags==2.0
 pytz==2013b
 wsgiref==0.1.2
+simplejson==3.3.3

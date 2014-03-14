@@ -62,7 +62,11 @@ class InterviewSlot(object):
         return time.mktime(self.end_time.timetuple())
 
 
-Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
+class Interview(object):
+    def __init__(self, interview_slots, room, priority):
+        self.interview_slots = interview_slots
+        self.room = room
+        self.priority = priority
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
