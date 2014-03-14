@@ -8,12 +8,17 @@
 {% endblock %}
 
 {% block body %}
+
+<div style="float:left;"><a href="/tracker/?start_date={{ last_week_start }}"><< Previous Week</a></div><div style="float:right;"><a href="/tracker/?start_date={{ next_week_start}}">Next Week >></a></div>
+
+<div style="text-align: center;">
 <input id="interviewerSearchInput" placeholder="Search Interviewer or Candidate">
 <input id="groupSearchInput" placeholder="Search Groups">
+</div>
 
 <br/><br/>
 
-<table border="1" class="tracker-container">
+<table border="1" class="tracker-header">
 
   <tr>
     <th class="tracker-req"></th>

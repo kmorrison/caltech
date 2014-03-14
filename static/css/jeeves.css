@@ -536,8 +536,17 @@ ul{
 
 }
 
-.tracker-container th{
-  padding:21px 25px 22px 25px;
+.tracker-header{
+  width: 100%;
+  border:#fafafa 1px solid;
+
+  -moz-border-radius:3px;
+  -webkit-border-radius:3px;
+  border-radius:3px;
+}
+
+.tracker-header th{
+  padding: 15px;
   border-top:1px solid #fafafa;
   border-bottom:1px solid #e0e0e0;
 
@@ -584,12 +593,12 @@ ul{
     width: 200px;
     background: #000;
     padding: 10px;
-    font: 11px Arial, Helvetica, sans-serif;
+    font: 13px Arial, Helvetica, sans-serif;
     -moz-border-radius: 5px;
     border-radius: 5px;
     -webkit-border-radius: 5px;
     position: absolute;
-    top: 50px;
+    top: 15px;
     border: 2px solid #999;
     display: none;
     z-index: 3;
