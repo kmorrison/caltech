@@ -87,10 +87,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
     return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
 
 def get_all_rooms(time_period):
-    room_id = getattr(secret, 'room_id', None)
-    if room_id is None:
-        return None
-    all_rooms = models.Requisition.objects.get(id=room_id).interviewers.all()
+    all_rooms = models.Room.objects.all()
     return calendar_client.get_calendars(all_rooms, time_period).interview_calendars
 
 def get_preferences(interviewers):
