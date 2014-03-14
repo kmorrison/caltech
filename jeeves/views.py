@@ -401,7 +401,8 @@ def new_scheduler(request):
       itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times(),
-      success=success
+      success=success,
+      recruiters=schedule_calculator.get_all_recruiters()
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
