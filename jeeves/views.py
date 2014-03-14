@@ -250,13 +250,68 @@ def interview_post(request):
 def tracker(request):
     if 'start_date' not in request.GET:
         today = date.today()
-        start_date = today + timedelta(days=today.weekday())
+        start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=4)
     else:
         start_date = date.fromtimestamp(request.GET['start_date'])
         end_date = date.fromtimestamp(request.GET['end_date'])
 
-    tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
+    tracker_dict = {'backend': {
+                        'chao': [{
+                                    'room': 'Airport',
+                                    'start_time': 1234.0,
+                                    'end_time': 123.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'House',
+                                    'start_time': 1234.0,
+                                    'end_time': 120.0,
+                                    'day_of_week': 0
+                                }],
+                        'sumeet': [{
+                                    'room': 'Candy',
+                                    'start_time': 1230.0 ,
+                                    'end_time': 121.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'Warehouse',
+                                    'start_time': 1232.0,
+                                    'end_time': 122.0,
+                                    'day_of_week': 1
+                                }]
+                },
+                'frontend': {
+                    'alanq': [{
+                                'room': 'Shack',
+                                'start_time': 1134.0 ,
+                                'end_time': 123.0,
+                                'day_of_week': 4
+                            },
+                            {
+                                'room': 'Rodeo',
+                                'start_time': 1034.0,
+                                'end_time': 120.0,
+                                'day_of_week': 4
+                            }],
+                    'mtakaki': [{
+                                'room': 'Man',
+                                'start_time': 1250.0 ,
+                                'end_time': 121.0,
+                                'day_of_week': 2
+                            },
+                            {
+                                'room': 'Bathroom',
+                                'start_time': 1262.0,
+                                'end_time': 122.0,
+                                'day_of_week': 1
+                            }]
+                }
+    }
+
+    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
+
     for group, interviewer_dict in tracker_dict.iteritems():
         for interviewer_name, interviews in interviewer_dict.items():
             interviews.sort(key=operator.itemgetter('day_of_week'))
@@ -269,7 +324,6 @@ def tracker(request):
                     interview['end_time'] = datetime.fromtimestamp(interview['end_time']).strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
             interviewer_dict[interviewer_name] = interviews_dict_by_day_of_week
-    import pdb; pdb.set_trace()
     return render(
             request,
             'tracker.html',
