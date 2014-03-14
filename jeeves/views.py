@@ -494,7 +494,7 @@ def new_scheduler_post(request):
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    requisition = models.Requisition.objects.get(name=form_data['requisition'][0])
+    requisition = models.Requisition.objects.get(name=form_data['requisition'])
     interviewer_groups = get_interview_groups_with_requirements(requisition, int(form_data['interview_type']))
     time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
 
