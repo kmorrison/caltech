@@ -1,3 +1,6 @@
+import simplejson
+import pytz
+
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -8,6 +11,7 @@ from django import forms
 from django.shortcuts import render
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.http import HttpResponse
 
 from jeeves import models
 from jeeves import rules
@@ -16,6 +20,7 @@ from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
 
 from caltech import secret
+from caltech import settings
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -31,7 +36,7 @@ def all_interviewers():
     return models.Interviewer.objects.all()
 
 def all_times():
-    hours = [str(num).zfill(2) for num in range(0, 23)]
+    hours = [str(num).zfill(2) for num in range(0, 24)]
     minutes = ['00', '15', '30', '45']
     times = []
     for hour in hours:
@@ -256,10 +261,66 @@ def tracker(request):
         start_date = date.fromtimestamp(request.GET['start_date'])
         end_date = date.fromtimestamp(request.GET['end_date'])
 
-    tracker_dict = schedule_calculator.get_interviews_with_all_interviewers(
+    tracker_dict_2 = schedule_calculator.get_interviews_with_all_interviewers(
         start_date,
         end_date
     )
+    tracker_dict = {'backend': {
+                        'chao': [{
+                                    'room': 'Airport',
+                                    'start_time': 1234.0,
+                                    'end_time': 123.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'House',
+                                    'start_time': 1234.0,
+                                    'end_time': 120.0,
+                                    'day_of_week': 0
+                                }],
+                        'sumeet': [{
+                                    'room': 'Candy',
+                                    'start_time': 1230.0 ,
+                                    'end_time': 121.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'Warehouse',
+                                    'start_time': 1232.0,
+                                    'end_time': 122.0,
+                                    'day_of_week': 1
+                                }]
+                },
+                'frontend': {
+                    'alanq': [{
+                                'room': 'Shack',
+                                'start_time': 1134.0 ,
+                                'end_time': 123.0,
+                                'day_of_week': 4
+                            },
+                            {
+                                'room': 'Rodeo',
+                                'start_time': 1034.0,
+                                'end_time': 120.0,
+                                'day_of_week': 4
+                            }],
+                    'mtakaki': [{
+                                'room': 'Man',
+                                'start_time': 1250.0 ,
+                                'end_time': 121.0,
+                                'day_of_week': 2
+                            },
+                            {
+                                'room': 'Bathroom',
+                                'start_time': 1262.0,
+                                'end_time': 122.0,
+                                'day_of_week': 1
+                            }]
+                }
+    }
+
+    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
+
     for group, interviewer_dict in tracker_dict.iteritems():
         for interviewer_name, interviews in interviewer_dict.items():
             interviews.sort(key=operator.itemgetter('day_of_week'))
@@ -272,7 +333,6 @@ def tracker(request):
                     interview['end_time'] = interview['end_time'].strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
             interviewer_dict[interviewer_name] = interviews_dict_by_day_of_week
-    import ipdb; ipdb.set_trace()
     return render(
             request,
             'tracker.html',
@@ -287,7 +347,7 @@ def new_scheduler(request):
       reqs=all_reqs(),
       times=all_times()
     )
-    return render_to_response('new_scheduler.html', context)
+    return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
@@ -343,3 +403,94 @@ def scheduler_post(request):
                 schedules=schedules,
             )
     )
+
+def get_time_period(start_time, end_time, date):
+    def convert_form_datetime_to_sql_datetime(date, time):
+      date_time = datetime.strptime("{date} {time}".format(date=date, time=time), "%m/%d/%Y %H:%M:%S")
+      date_time = date_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+      return date_time
+
+    start_datetime = convert_form_datetime_to_sql_datetime(date, start_time)
+    end_datetime = convert_form_datetime_to_sql_datetime(date, end_time)
+    return TimePeriod(start_datetime, end_datetime)
+
+def error_check_scheduler_form_post(form):
+    error_fields = []
+    for field, value in form.iteritems():
+        if not value:
+            error_fields.append(field)
+    if error_fields:
+        return False, error_fields
+    else:
+        return True, []
+
+
+def get_interviewer_set(interviewer_type, requisition):
+    return []
+
+def new_scheduler_post(request):
+    form_data = request.POST
+
+    # error checking for request.POST
+    form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
+
+    if not form_is_valid:
+        return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
+
+    requisition = models.Requisition.objects.filter(name='Backend')[0]
+    interviewer_groups = get_interview_groups_with_requirements(requisition, int(form_data['interview_type']))
+    time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
+
+    calendar_responses = [
+        calendar_client.get_calendars(
+            interviewer_group.interviewers,
+            time_period)
+        for interviewer_group in interviewer_groups
+        if interviewer_group.num_required
+    ]
+
+    interviewer_groups_with_calendars = [
+        schedule_calculator.InterviewerGroup(
+            interviewers=calendar_response.interview_calendars,
+            num_required=interviewer_group.num_required,
+        )
+        for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
+    ]
+
+    schedules = schedule_calculator.calculate_schedules(
+            interviewer_groups_with_calendars,
+            time_period=time_period,
+    )
+
+    scheduler_post_result = {
+        'form_is_valid': form_is_valid,
+        'data': _dump_schedules_into_json(schedules)
+    }
+
+    return HttpResponse(simplejson.dumps(scheduler_post_result), mimetype='application/json')
+
+
+def _dump_schedules_into_json(schedules):
+    data = []
+    for schedule in schedules:
+        schedule_data = {
+            'priority': schedule.priority,
+            'room': _dump_interview_slot_to_dictionary(schedule.room),
+        }
+
+        interview_slots = []
+        for slot in schedule.interview_slots:
+            interview_slots.append(_dump_interview_slot_to_dictionary(slot))
+        schedule_data['interview_slots'] = interview_slots
+
+        data.append(schedule_data)
+
+    return data
+
+def _dump_interview_slot_to_dictionary(slot):
+    time_format = "%I:%M"
+    data = slot.__dict__
+    data['start_time'] = data['start_time'].strftime(time_format)
+    data['end_time'] = data['end_time'].strftime(time_format)
+    return data
+
