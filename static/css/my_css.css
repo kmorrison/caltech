@@ -10,7 +10,7 @@
 }
 
 #main-form .form-sec .chosen-container {
-  width: 240px !important;
+  width: 250px !important;
 }
 
 #main-form input {
@@ -19,5 +19,5 @@
 
 #main-form #date-picker,
 #main-form .candidate-name {
-  width: 240px;
+  width: 250px;
 }

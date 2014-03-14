@@ -23,7 +23,7 @@
 
   <div class="form-sec type">
     <h3>Interview Type</h3>
-    <select multiple data-placeholder="Pick a Interview Type" class="chosen-select">
+    <select multiple class="chosen-select">
       <option></option>
       {% for itype in itypes %}
         <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
@@ -33,7 +33,7 @@
 
   <div class="form-sec req">
     <h3>Requisition</h3>
-    <select multiple data-placeholder="Pick a Requisition" class="chosen-select">
+    <select multiple class="chosen-select">
       <option></option>
       {% for req in reqs %}
         <option value={{ req }}>{{ req }}</option>
@@ -43,12 +43,12 @@
 
   <div class="form-sec date">
     <h3>Date</h3>
-    <input type="text" name="date" id="date-picker">
+    <input autocomplete="off" type="text" name="date" id="date-picker">
   </div>
 
   <div class="form-sec start">
     <h3>Start Time</h3>
-    <select multiple data-placeholder="Add a Start Time" class="chosen-select">
+    <select multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
@@ -58,7 +58,7 @@
 
   <div class="form-sec end">
     <h3>End Time</h3>
-    <select multiple data-placeholder="Add a End Time" class="chosen-select">
+    <select multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
