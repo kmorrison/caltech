@@ -220,7 +220,7 @@ def new_scheduler(request):
       reqs=all_reqs(),
       times=all_times()
     )
-    return render_to_response('new_scheduler.html', context)
+    return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
@@ -245,10 +245,67 @@ def scheduler_post(request):
             dont_include=scheduler_form.cleaned_data['dont_include'],
     )
 
+
     calendar_responses = [
         calendar_client.get_calendars(
             interviewer_group.interviewers,
             scheduler_form.time_period)
+        for interviewer_group in interviewer_groups
+        if interviewer_group.num_required
+    ]
+
+    interviewer_groups_with_calendars = [
+        schedule_calculator.InterviewerGroup(
+            interviewers=calendar_response.interview_calendars,
+            num_required=interviewer_group.num_required,
+        )
+        for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
+    ]
+
+    schedules = schedule_calculator.calculate_schedules(
+            interviewer_groups_with_calendars,
+            time_period=scheduler_form.time_period,
+            possible_break=scheduler_form.possible_break,
+    )
+
+    import ipdb; ipdb.set_trace()
+    return render(
+            request,
+            'scheduler.html',
+            dict(
+                requisition_formset=requisition_formset,
+                scheduler_form=scheduler_form,
+                valid_submission=valid_submission,
+                schedules=schedules,
+            )
+    )
+
+
+def get_time_period(start_time, end_time, date):
+    def convert_form_datetime_to_sql_datetime(date, time):
+      date_time = datetime.strptime("{date} {time}".format(date=date, time=time), "%m/%d/%Y %H:%M:%S")
+      return date_time.strftime(TIME_FORMAT)
+
+    start_time = form['start_time']
+    end_time = form['end_time']
+    date = form['date']
+    start_datetime = convert_form_datetime_to_sql_datetime(date, start_time)
+    end_datetime = convert_form_datetime_to_sql_datetime(date, end_time)
+    return (start_datetime, end_datetime)
+
+
+def new_scheduler_post(request):
+    # error checking for request.POST
+
+    form_data = request.POST
+
+    interviewer_groups = get_interviewer_set(form_data['interview_type'], form_data['requisition'])
+    time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
+
+    calendar_responses = [
+        calendar_client.get_calendars(
+            interviewer_group.interviewers,
+            time_period)
         for interviewer_group in interviewer_groups
         if interviewer_group.num_required
     ]
@@ -277,3 +334,4 @@ def scheduler_post(request):
                 schedules=schedules,
             )
     )
+

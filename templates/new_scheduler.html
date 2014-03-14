@@ -16,9 +16,9 @@
 <h2>Warning: About to Do Science!</h2>
 
 <div id="main-form">
-<form action="/scheduler_post/" method="post">{% csrf_token %}
+<form action="/new_scheduler_post/" method="post">{% csrf_token %}
     <em>Interview Type</em>
-    <select data-placeholder="Pick an Interview Type" class="chosen-select" style="width:350px;">
+    <select name='interview_type' data-placeholder="Pick an Interview Type" class="chosen-select" style="width:350px;">
       <option></option>
       {% for itype in itypes %}
         <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
@@ -28,7 +28,7 @@
 
   <div>
     <em>Requisition</em>
-    <select data-placeholder="Pick a Requisition" class="chosen-select" style="width:350px;">
+    <select name='requisition' data-placeholder="Pick a Requisition" class="chosen-select" style="width:350px;">
       <option></option>
       {% for req in reqs %}
         <option value={{ req }}>{{ req }}</option>
@@ -43,7 +43,7 @@
 
   <div>
     <em>Start Time</em>
-    <select data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;">
+    <select name='start_time' data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
@@ -53,7 +53,7 @@
 
   <div>
     <em>End Time</em>
-    <select data-placeholder="Add a End Time" class="chosen-select" style="width:350px">
+    <select name='end_time' data-placeholder="Add a End Time" class="chosen-select" style="width:350px">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
