@@ -21,4 +21,5 @@ urlpatterns = patterns('',
     url(r'^interview_post/', 'jeeves.views.interview_post'),
     url(r'^find_times/', 'jeeves.views.find_times'),
     url(r'^find_times_post/', 'jeeves.views.find_times_post'),
+    url(r'^tracker/', 'jeeves.views.tracker'),
 )
