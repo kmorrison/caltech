@@ -59,8 +59,8 @@ class InterviewSlot(object):
     @property
     def end_datetime(self):
         return time.mktime(self.end_time.timetuple())
-    
-    
+
+
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
@@ -336,3 +336,26 @@ def possible_interview_chunks(free_times):
 def filter_free_times_for_length(free_times):
     """Given a list of free times, return chunks that are of the given length or greater."""
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
+
+
+def persist_interview(interview_infos):
+    interview_info = interview_infos[0]
+    room_id = interview_info['room_id']
+    candidate_name = interview_info['candidate_name']
+
+    interview = models.Interview.objects.create(
+        candidate_name=candidate_name,
+        room_id=room_id,
+        type=models.InterviewType.ON_SITE
+    )
+
+    for interview_info in interview_infos:
+        assert interview_info['room_id'] == room_id
+        models.InterviewSlot.objects.create(
+            interview_id=interview.id,
+            interviewer_id=interview_info['interviewer_id'],
+            start_time=interview_info['start_time'],
+            end_time=interview_info['end_time']
+        )
+
+    return interview.id
