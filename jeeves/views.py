@@ -1,3 +1,6 @@
+import simplejson
+import pytz
+
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -31,7 +34,7 @@ def all_interviewers():
     return models.Interviewer.objects.all()
 
 def all_times():
-    hours = [str(num).zfill(2) for num in range(0, 23)]
+    hours = [str(num).zfill(2) for num in range(0, 24)]
     minutes = ['00', '15', '30', '45']
     times = []
     for hour in hours:
