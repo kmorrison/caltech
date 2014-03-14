@@ -21,3 +21,12 @@
 #main-form .candidate-name {
   width: 250px;
 }
+
+.tracker-container .week {
+  overflow: hidden;
+}
+
+.tracker-container .week li {
+  float: left;
+  width: 30px;
+}

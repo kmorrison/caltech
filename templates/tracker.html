@@ -8,5 +8,32 @@
 {% endblock %}
 
 {% block body %}
-hellow world
+<table border="1" class="tracker-container">
+  <tr>
+    <th>Requisition</th>
+    <th>
+       1 week
+       <ul class="week">
+         <li>Mon</li>
+         <li>Tue</li>
+         <li>Wed</li>
+         <li>Thur</li>
+         <li>Fri</li>
+       </ul>
+    </th>
+  </tr>
+  {% for cat, stuff in tracker_dict.items %}
+    <tr class="category">
+      <td><strong>{{cat}}</strong></td>
+      <td></td>
+    </tr>
+    {% for person in stuff %}
+      <tr>
+        <td>{{person.interviewer_name}}</td>
+        <td>
+        </td>
+      </tr>
+    {% endfor %} 
+  {% endfor %}
+</table>
 {% endblock %}
