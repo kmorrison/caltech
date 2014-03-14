@@ -1,138 +1,28 @@
 from jeeves import models
 from jeeves.models import InterviewType
+from caltech import secret
 
+default_rules = {
+    InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
+    InterviewType.SKYPE: [(1, 'Backend')],
+    InterviewType.SKYPE_ON_SITE: [(2, 'Backend')],
+}
 
-INTERVIEW_MAPPING_RULES = {
-        'Backend':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (0, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(1, 'Backend'), (1, 'Stoppelgangers')],
-            },
-        'Ads':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Engineer Manager':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Search':{
-            InterviewType.ON_SITE: [(2, 'Search'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Search'), (2, 'Stoppelgangers')],
-            },
-        'Spam':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Data Scientist':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Web Dev':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Infra':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Sys Infra':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Data Scientist':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Web Dev':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Infra':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Sys Infra':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Mobile':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Sys Admin (Corp)':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'MySQL DBA':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'New Grad/Intern':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'PM':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'IT HelpDesk Manager':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Front End':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Engineering Manager - Security':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Sys Admin (Prod)':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Stoppelgangers':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        'Search/ads/spam':{
-            InterviewType.ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            InterviewType.SKYPE_ON_SITE: [(2, 'Backend'), (2, 'Stoppelgangers')],
-            },
-        }
+# THIS NEEDS TO BE SET
+interview_mapping_rules = getattr(secret, 'interview_mapping_rules', None)
 
 
 def get_interview_requirements(requisition, interview_type):
-    req_rules = INTERVIEW_MAPPING_RULES.get(requisition.name)
+    if interview_mapping_rules is None:
+        req_rules = default_rules
+    else:
+        req_rules = interview_mapping_rules.get(requisition.name)
 
     if not req_rules:
         return None
 
     return req_rules.get(interview_type)
+
 
 def get_interview_group(rule):
     result = []
