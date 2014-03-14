@@ -10,6 +10,7 @@ import operator
 
 from django import forms
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -251,7 +252,7 @@ def interview_post(request):
         interview_slot['candidate_name'] = 'bob'
 
     schedule_calculator.persist_interview(interviews)
-    return scheduler(request)
+    return redirect('/new_scheduler?success=1')
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
@@ -266,8 +267,8 @@ def tracker(request):
         start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=5)
     else:
-        start_date = date.fromtimestamp(request.GET['start_date'])
-        end_date = date.fromtimestamp(request.GET['end_date'])
+        start_date = date.fromtimestamp(float(request.GET['start_date']))
+        end_date = start_date + timedelta(days=5)
 
     last_week_start = start_date - timedelta(days=7)
     next_week_start = start_date + timedelta(days=7)
@@ -374,6 +375,15 @@ def tracker(request):
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
         tracker_dict[group] = group_dict
 
+    date_format = "%m/%d"
+    week_info = (
+        ('Mon', start_date.strftime(date_format)),
+        ('Tue', (start_date + timedelta(days=1)).strftime(date_format)),
+        ('Wed', (start_date + timedelta(days=2)).strftime(date_format)),
+        ('Thu', (start_date + timedelta(days=3)).strftime(date_format)),
+        ('Fri', (start_date + timedelta(days=4)).strftime(date_format)),
+    )
+
     return render(
             request,
             'tracker.html',
@@ -381,14 +391,18 @@ def tracker(request):
                 tracker_dict = tracker_dict,
                 last_week_start = time.mktime(last_week_start.timetuple()),
                 next_week_start = time.mktime(next_week_start.timetuple()),
+                week_info = week_info,
             )
     )
 
 def new_scheduler(request):
+    success = 1 if 'success' in request.GET else 0
     context = dict(
       itypes=all_interview_types(),
       reqs=all_reqs(),
-      times=all_times()
+      times=all_times(),
+      success=success,
+      recruiters=schedule_calculator.get_all_recruiters()
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
@@ -535,7 +549,9 @@ def _dump_schedules_into_json(schedules):
 def _dump_interview_slot_to_dictionary(slot):
     time_format = "%I:%M"
     data = slot.__dict__
+    data['start_datetime'] = time.mktime(data['start_time'].timetuple())
+    data['end_datetime'] = time.mktime(data['end_time'].timetuple())
     data['start_time'] = data['start_time'].strftime(time_format)
     data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    return data 
 

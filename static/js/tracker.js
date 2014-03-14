@@ -21,23 +21,41 @@ $(document).ready(function() {
   Lazy Search Jquery
   ################################################
   */
+
   $("#interviewerSearchInput").keyup(function () {
+
+      // NEW selector
+      jQuery.expr[':'].Contains = function(a, i, m) {
+        return jQuery(a).text().toUpperCase()
+            .indexOf(m[3].toUpperCase()) >= 0;
+      };
+
+      // OVERWRITES old selecor
+      jQuery.expr[':'].contains = function(a, i, m) {
+        return jQuery(a).text().toUpperCase()
+            .indexOf(m[3].toUpperCase()) >= 0;
+      };
+
       //split the current value of searchInput
       var data = this.value.split(" ");
       //create a jquery object of the rows
       var jo = $(".tracker-container").find("tr");
+      var tracker_group = $(".tracker-interview-group") 
       if (this.value == "") {
           jo.show();
+          tracker_group.show()
           return;
       }
       //hide all the rows
       jo.hide();
+      tracker_group.hide()
 
       //Recusively filter the jquery object to get results.
       jo.filter(function (i, v) {
           var $t = $(this);
           for (var d = 0; d < data.length; ++d) {
               if ($t.is(":contains('" + data[d] + "')")) {
+                  $t.parent().parent().parent().find('.tracker-interview-group').show()
                   return true;
               }
           }

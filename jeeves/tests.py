@@ -360,14 +360,14 @@ class InterviewScheduleTest(TestCase):
             room=room,
         )
 
-        models.ScheduledInterview.objects.create(
+        models.InterviewSlot.objects.create(
             interviewer=bryce,
             interview=interview,
             start_time=datetime(2014, 3, 1, 12, 0),
             end_time=datetime(2014, 3, 1, 12, 45),
         )
 
-        models.ScheduledInterview.objects.create(
+        models.InterviewSlot.objects.create(
             interviewer=kyle,
             interview=interview,
             start_time=datetime(2014, 3, 1, 12, 45),
@@ -428,8 +428,19 @@ class PersistInterviewTest(TestCase):
             interview_data['interviewer'].id
         )
 
+    def test_persist_data_adds_recruiter(self):
+        recruiter = models.Recruiter.objects.create(
+            name='anthony',
+            domain='@isking.com',
+            display_name='Anthony is King'
+        )
+        interview_data = create_interview_data(recruiter_id=recruiter.id)
+        interview_id = interview_data['interview_id']
+        interview = models.Interview.objects.get(id=interview_id)
+        self.assertEqual(interview.recruiter_id, recruiter.id)
 
-def create_interview_data():
+
+def create_interview_data(recruiter_id=None):
     room = models.Room.objects.create(type=1)
     interviewer = models.Interviewer.objects.create(
         name='malcolm',
@@ -451,7 +462,8 @@ def create_interview_data():
         'candidate_name': 'bob'
     }
     interview_id = schedule_calculator.persist_interview(
-        [interview_info]
+        [interview_info],
+        recruiter_id=recruiter_id
     )
 
     interview_slots = models.Interview.objects.get(id=interview_id).interviewslot_set.all()
@@ -514,3 +526,35 @@ class ChangeInterviewerTest(TestCase):
         )
         slot = models.InterviewSlot.objects.get(id=interview_slot_id)
         self.assertEqual(slot.interviewer.id, interviewer.id)
+
+
+class RecruiterTest(TestCase):
+    def test_create_recruiter(self):
+        recruiter = models.Recruiter.objects.create(
+            name='anthony',
+            domain='@isking.com',
+            display_name='Anthony is King'
+        )
+        self.assertEqual(recruiter.name, 'anthony')
+
+
+class DeleteInterviewTest(TestCase):
+    def test_delete_interview(self):
+        interview_data = create_interview_data()
+        schedule_calculator.delete_interview(interview_data['interview_id'])
+        self.assertEqual(
+            models.Interview.objects.filter(
+                id=interview_data['interview_id']
+            ).exists(),
+            False
+        )
+
+class GetAllRecruiters(TestCase):
+    def test_get_all_recruiters(self):
+        recruiter = models.Recruiter.objects.create(
+            name='anthony',
+            domain='@isking.com',
+            display_name='Anthony is King'
+        )
+        recruiters = schedule_calculator.get_all_recruiters()
+        self.assertIn(recruiter, recruiters)
