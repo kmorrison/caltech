@@ -1,15 +1,10 @@
-from datetime import timedelta
-from datetime import datetime
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import httplib2
-import itertools
 from apiclient.discovery import build
-from oauth2client.client import OAuth2WebServerFlow
-from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import run
-
-import lib
 
 CLIENT_SECRETS = 'auth.json'
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"

@@ -1,8 +1,6 @@
 import random
-from datetime import datetime
 from datetime import timedelta
 from httplib import BadStatusLine
-from pprint import pprint
 
 import json
 from django.core.serializers.json import DjangoJSONEncoder

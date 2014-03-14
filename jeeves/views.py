@@ -25,6 +25,17 @@ def all_reqs():
 def all_interviewers():
     return models.Interviewer.objects.all()
 
+def all_times():
+    minutes = ['00', '15', '30', '45']
+    hours = [str(num) for num in range(1, 13)]
+    periods = ['am', 'pm']
+    times = []
+    for period in periods:
+      for hour in hours:
+        for minute in minutes:
+            times.append('%s:%s %s' % (hour, minute, period))
+    return times
+
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
     interviewers = set(requisition.interviewers.all())
@@ -199,6 +210,12 @@ def scheduler(request):
     )
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
+def new_scheduler(request):
+    context = dict(
+      reqs=all_reqs(),
+      times=all_times()
+    )
+    return render_to_response('new_scheduler.html', context)
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
