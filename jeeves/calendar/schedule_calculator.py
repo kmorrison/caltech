@@ -388,7 +388,9 @@ class _InterviewGetter(object):
                 'start_time': interview_slot.start_time,
                 'end_time': interview_slot.end_time,
                 'candidate_name': interview_slot.interview.candidate_name,
-                'day_of_week': interview_slot.start_time.weekday()
+                'day_of_week': interview_slot.start_time.weekday(),
+                'interview_id': interview_slot.interview.id,
+                'interview_slot_id': interview_slot.id
             }
 
             for req in interview_slot.interviewer.requisitions.all():
@@ -413,6 +415,7 @@ class _InterviewGetter(object):
             end_time__lte=self._end_time,
         )
 
+
 def get_all_req_to_interviewers():
     reqs = models.Requisition.objects.all()
     req_to_interviewers_map = {}
@@ -436,3 +439,9 @@ def get_interviews_with_all_interviewers(*args, **kwargs):
             interviews[req].setdefault(interviewer, [])
 
     return interviews
+
+
+def change_interviewer(interview_slot_id, interviewer_id):
+    slot = models.InterviewSlot.objects.get(id=interview_slot_id)
+    slot.interviewer_id = interviewer_id
+    slot.save()
