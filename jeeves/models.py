@@ -18,6 +18,7 @@ class Interview(models.Model):
 class InterviewType(object):
     ON_SITE = 1
     SKYPE = 2
+    SKYPE_ON_SITE = 3
 
     @classmethod
     def get_value(cls, *flags):
@@ -40,8 +41,9 @@ class InterviewTypeChoice(object):
   @property
   def display_string(self):
     return {
-      InterviewType.ON_SITE: 'On site',
+      InterviewType.ON_SITE: 'On Site',
       InterviewType.SKYPE: 'SPI',
+      InterviewType.SKYPE_ON_SITE: 'Skype On Site',
     }.get(self.interview_type)
 
 

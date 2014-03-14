@@ -407,5 +407,3 @@ class InterviewTypeTest(TestCase):
             ),
             expected
         )
-
-

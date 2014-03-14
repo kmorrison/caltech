@@ -6,6 +6,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from jeeves import models
+from jeeves import rules
 from jeeves.calendar import schedule_calculator
 from jeeves.calendar.client import calendar_client
 from jeeves.calendar.lib import TimePeriod
@@ -85,6 +86,18 @@ def get_interviewer_groups(formset, also_include=None, dont_include=None):
     interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
     return interviewer_groups
 
+def get_interview_groups_with_requirements(requisition, interview_type, also_include=None, dont_include=None):
+    requirements = rules.get_interview_requirements(requisition, interview_type)
+    interviewer_groups = rules.get_interview_group(requirements)
+
+    # Reduce interviewer sets
+    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
+    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
+        for _, other_interviewers in interviewer_groups[i+1:]:
+            other_interviewers.difference_update(interviewers)
+
+    interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
+    return interviewer_groups
 
 class FindTimesForm(forms.Form):
     requisition = forms.ModelChoiceField(queryset=all_reqs(), initial=getattr(secret, 'preferred_requisition_id', None) or 1)
