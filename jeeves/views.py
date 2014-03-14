@@ -494,7 +494,7 @@ def new_scheduler_post(request):
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    requisition = models.Requisition.objects.filter(name='Backend')[0]
+    requisition = models.Requisition.objects.get(name=form_data['requisition'][0])
     interviewer_groups = get_interview_groups_with_requirements(requisition, int(form_data['interview_type']))
     time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
 
@@ -553,5 +553,5 @@ def _dump_interview_slot_to_dictionary(slot):
     data['end_datetime'] = time.mktime(data['end_time'].timetuple())
     data['start_time'] = data['start_time'].strftime(time_format)
     data['end_time'] = data['end_time'].strftime(time_format)
-    return data 
+    return data
 
