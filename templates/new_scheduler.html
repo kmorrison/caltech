@@ -14,6 +14,9 @@
 
 {% block body %}
 
+{% if success == 1 %}
+<div>Interviews successfully scheduled.</div>
+{% endif %}
 <div id="main-form">
 <form id="scheduler_form">{% csrf_token %}
   <div class="form-sec candidate-name">
