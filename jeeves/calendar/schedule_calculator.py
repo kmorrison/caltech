@@ -60,8 +60,7 @@ class InterviewSlot(object):
     @property
     def end_datetime(self):
         return time.mktime(self.end_time.timetuple())
-    
-    
+
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
@@ -228,11 +227,6 @@ def calculate_preference_scores(interview_slots, preference_calendars):
     ]
 
 
-def _preferencize_address(address):
-    i = address.index('@')
-    return address[:i] + '.interviews' + address[i:]
-
-
 def calculate_interviewer_schedule_padding_scores(possible_schedule, interviewer_calendars):
     interviewer_by_address = dict(
         (interviewer_calendar.interviewer.address, interviewer_calendar)
@@ -269,7 +263,6 @@ def _preference_score(interviewer_slot, preferences_calendar):
     assert interviewer_slot.start_time.date() == interviewer_slot.end_time.date()
 
     if preferences_calendar.is_blocked_during(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
-        print 'yay'
         return 15
     return 0
 
