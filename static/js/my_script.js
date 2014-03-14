@@ -19,9 +19,9 @@ $(document).ready(function() {
                    template.find('.slots').append(slotHtml);
                    
                    var startTimeInput = $('<input type="hidden" name="start_time">')
-                   startTimeInput.val(slot.start_time);
+                   startTimeInput.val(slot.start_datetime);
                    var endTimeInput = $('<input type="hidden" name="end_time">')
-                   endTimeInput.val(slot.end_time);
+                   endTimeInput.val(slot.end_datetime);
 
                    var roomInput = $('<input type="hidden" name="room">')
                    roomInput.val(schedule.room.interviewer);
