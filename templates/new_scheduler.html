@@ -29,7 +29,7 @@
     <select name='interview_type' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for itype in itypes %}
-        <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
+        <option value="{{ itype.interview_type }}">{{ itype.display_string }}</option>
       {% endfor %}
     </select>
   </div>
@@ -39,7 +39,7 @@
     <select name='requisition' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for req in reqs %}
-        <option value={{ req }}>{{ req }}</option>
+        <option value="{{ req }}">{{ req }}</option>
       {% endfor %}
     </select>
   </div>
@@ -54,7 +54,7 @@
     <select name='start_time' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
+        <option value="{{ ti.time_value }}">{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
@@ -64,7 +64,7 @@
     <select name='end_time' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
-        <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
+        <option value="{{ ti.time_value }}">{{ ti.display_string }}</option>
       {% endfor %}
     </select>
   </div>
@@ -82,7 +82,7 @@
         <select name='recruiter_id' multiple data-placeholder=" " class="recruiter-select">
           <option></option>
           {% for recruiter in recruiters %}
-            <option value={{ recruiter.id }}>{{ recruiter.display_name }}</option>
+            <option value="{{ recruiter.id }}">{{ recruiter.display_name }}</option>
           {% endfor %}
         </select>
         {% csrf_token %}
