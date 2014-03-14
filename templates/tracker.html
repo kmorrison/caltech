@@ -38,9 +38,21 @@
             {% if interviewer_info.interviews.0 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.0.interviews %}
-                     <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }}<br/>
-                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }}
-                     </p>
+                     <form action="/modify_interview/" method="post">{% csrf_token %}
+                      <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }} <br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
+                      <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
+                      <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
+                      Reassign to: <select name="interviewer_id" class="interviewer_id">
+                          <option></option>
+                      {% for i in all_interviewers %}
+                          <option value="{{ i.id }}">{{ i.display_name }}</option>
+                      {% endfor %}
+                      </select><br/>
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
+                      </p>
+                     </form>
                   {% endfor %}
               </div>
               {{ interviewer_info.interviews.0.num_interviews }}
@@ -50,9 +62,21 @@
             {% if interviewer_info.interviews.1 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.1.interviews %}
-                     <p>{{ interview_info.candidate_name }} ({{ interview_info.interview_type }})<br/>
-                        Room {{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}
-                     </p>
+                     <form action="/modify_interview/" method="post">{% csrf_token %}
+                      <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }} <br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
+                      <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
+                      <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
+                      Reassign to: <select name="interviewer_id" class="interviewer_id">
+                          <option></option>
+                      {% for i in all_interviewers %}
+                          <option value="{{ i.id }}">{{ i.display_name }}</option>
+                      {% endfor %}
+                      </select><br/>
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
+                      </p>
+                     </form>
                   {% endfor %}
               </div>
               {{ interviewer_info.interviews.1.num_interviews }}
@@ -62,9 +86,21 @@
             {% if interviewer_info.interviews.2 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.2.interviews %}
-                     <p>{{ interview_info.candidate_name }} ({{ interview_info.interview_type }})<br/>
-                        Room {{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}
-                     </p>
+                     <form action="/modify_interview/" method="post">{% csrf_token %}
+                      <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }} <br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
+                      <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
+                      <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
+                      Reassign to: <select name="interviewer_id" class="interviewer_id">
+                          <option></option>
+                      {% for i in all_interviewers %}
+                          <option value="{{ i.id }}">{{ i.display_name }}</option>
+                      {% endfor %}
+                      </select><br/>
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
+                      </p>
+                     </form>
                   {% endfor %}
               </div>
               {{ interviewer_info.interviews.2.num_interviews }}
@@ -74,9 +110,21 @@
             {% if interviewer_info.interviews.3 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.3.interviews %}
-                     <p>{{ interview_info.candidate_name }} ({{ interview_info.interview_type }})<br/>
-                        Room {{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}
-                     </p>
+                     <form action="/modify_interview/" method="post">{% csrf_token %}
+                      <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }} <br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
+                      <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
+                      <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
+                      Reassign to: <select name="interviewer_id" class="interviewer_id">
+                          <option></option>
+                      {% for i in all_interviewers %}
+                          <option value="{{ i.id }}">{{ i.display_name }}</option>
+                      {% endfor %}
+                      </select><br/>
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
+                      </p>
+                     </form>
                   {% endfor %}
               </div>
               {{ interviewer_info.interviews.3.num_interviews }}
@@ -91,14 +139,14 @@
                         Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
                       <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
                       <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
-                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
-                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
-                      <select name="interviewer_id" class="interviwer_id">
+                      Reassign to: <select name="interviewer_id" class="interviewer_id">
                           <option></option>
                       {% for i in all_interviewers %}
                           <option value="{{ i.id }}">{{ i.display_name }}</option>
                       {% endfor %}
-                      </select>
+                      </select><br/>
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
                       </p>
                      </form>
                   {% endfor %}

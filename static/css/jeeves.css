@@ -670,7 +670,8 @@ ul{
   text-decoration:none;
   text-align:center;}
 
-#interviewer_id {
-  width: 80px;
-  font-size: 10px;
+.interviewer_id {
+  width: 150px;
+  font-size: 12px;
+  text-color: #7F7F7F;
 }

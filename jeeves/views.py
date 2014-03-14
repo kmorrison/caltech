@@ -414,11 +414,11 @@ def modify_interview(request):
     if form_data['hovercard-submit'] == 'Modify':
         if form_data['interview_slot_id'] and form_data['interviewer_id']:
             schedule_calculator.change_interviewer(form_data['interview_slot_id'], form_data['interviewer_id'])
-            return redirect('/tracker/')
     elif form_data['hovercard-submit'] == 'Remove':
-        return redirect('/tracker/')
-    else:
-        return redirect('/tracker/')
+        if form_data['interview_id']:
+            schedule_calculator.delete_interview(form_data['interview_id'])
+
+    return redirect('/tracker/')
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
