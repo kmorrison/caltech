@@ -366,3 +366,49 @@ def persist_interview(interview_infos):
         )
 
     return interview.id
+
+
+def get_interviews(start_time, end_time):
+    getter = _InterviewGetter(start_time, end_time)
+    return getter.get()
+
+
+class _InterviewGetter(object):
+
+    def __init__(self, start_time, end_time):
+        self._start_time = start_time
+        self._end_time = end_time
+
+    def get(self):
+        interview_slots = self._get_interview_slots()
+        output = {}
+        for interview_slot in interview_slots:
+            interviews_data = {
+                'room': interview_slot.interview.room.display_name,
+                'start_time': interview_slot.start_time,
+                'end_time': interview_slot.end_time,
+                'candidate_name': interview_slot.interview.candidate_name,
+                'day_of_week': interview_slot.start_time.weekday()
+            }
+
+            for req in interview_slot.interviewer.requisitions.all():
+                output.setdefault(req.name, {})
+                req_interviewers = output[req.name]
+                req_interviewers.setdefault(
+                    interview_slot.interviewer.display_name,
+                    []
+                )
+                req_interviewer_slots = \
+                    req_interviewers[interview_slot.interviewer.display_name]
+
+                req_interviewer_slots.append(
+                    interviews_data
+                )
+
+        return output
+
+    def _get_interview_slots(self):
+        return models.InterviewSlot.objects.filter(
+            start_time__gte=self._start_time,
+            end_time__lte=self._end_time,
+        )
