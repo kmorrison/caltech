@@ -1,0 +1,1 @@
+ALTER TABLE jeeves_interviewer ADD COLUMN "preferences_address" varchar(256);
