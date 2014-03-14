@@ -266,8 +266,8 @@ def tracker(request):
         start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=5)
     else:
-        start_date = date.fromtimestamp(request.GET['start_date'])
-        end_date = date.fromtimestamp(request.GET['end_date'])
+        start_date = date.fromtimestamp(float(request.GET['start_date']))
+        end_date = start_date + timedelta(days=5)
 
     last_week_start = start_date - timedelta(days=7)
     next_week_start = start_date + timedelta(days=7)
@@ -374,6 +374,15 @@ def tracker(request):
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
         tracker_dict[group] = group_dict
 
+    date_format = "%m/%d"
+    week_info = (
+        ('Mon', start_date.strftime(date_format)),
+        ('Tue', (start_date + timedelta(days=1)).strftime(date_format)),
+        ('Wed', (start_date + timedelta(days=2)).strftime(date_format)),
+        ('Thu', (start_date + timedelta(days=3)).strftime(date_format)),
+        ('Fri', (start_date + timedelta(days=4)).strftime(date_format)),
+    )
+
     return render(
             request,
             'tracker.html',
@@ -381,6 +390,7 @@ def tracker(request):
                 tracker_dict = tracker_dict,
                 last_week_start = time.mktime(last_week_start.timetuple()),
                 next_week_start = time.mktime(next_week_start.timetuple()),
+                week_info = week_info,
             )
     )
 

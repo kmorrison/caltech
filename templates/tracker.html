@@ -8,25 +8,28 @@
 {% endblock %}
 
 {% block body %}
+
+<div style="float:left;"><a href="/tracker/?start_date={{ last_week_start }}"><< Previous Week</a></div><div style="float:right;"><a href="/tracker/?start_date={{ next_week_start}}">Next Week >></a></div>
+
+<div style="text-align: center;">
 <input id="interviewerSearchInput" placeholder="Search Interviewer or Candidate">
 <input id="groupSearchInput" placeholder="Search Groups">
+</div>
 
 <br/><br/>
 
-<table border="1" class="tracker-container">
+<table border="1" class="tracker-header">
 
   <tr>
     <th class="tracker-req"></th>
-    <th class="tracker-day">Mon</th>
-    <th class="tracker-day">Tue</th>
-    <th class="tracker-day">Wed</th>
-    <th class="tracker-day">Thu</th>
-    <th class="tracker-day">Fri</th>
+    {% for day, date in week_info %}
+      <th class="tracker-day">{{ day }}<br/>{{ date }}</th>
+    {% endfor %}
   </tr>
 </table>
   <ul id="tracker-ul">
   {% for cat, cat_info in tracker_dict.items %}
-    <li><div class='tracker-interview-group'>{{ cat|title }}</div>
+    <li><div class='tracker-interview-group'><strong>{{ cat|title }}</strong></div>
     <table border="1" class="tracker-container" color_group="{{ cat_info.color_group }}">
     {% for person, interviewer_info in cat_info.interviewer.items %}
       <tr>
@@ -35,8 +38,8 @@
             {% if interviewer_info.interviews.0 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.0.interviews %}
-                     <p>{{ interview_info.candidate_name }} ({{ interview_info.interview_type }})<br/>
-                        Room {{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}
+                     <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }}<br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }}
                      </p>
                   {% endfor %}
               </div>
@@ -83,8 +86,8 @@
             {% if interviewer_info.interviews.4 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.4.interviews %}
-                     <p>{{ interview_info.candidate_name }} ({{ interview_info.interview_type }})<br/>
-                        Room {{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}
+                     <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }}<br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }}
                      </p>
                   {% endfor %}
               </div>

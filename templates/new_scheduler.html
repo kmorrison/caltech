@@ -77,7 +77,8 @@
   <li class="schedule-item template">
     <h4 class="room"></h4>
     <div class="slots"></div>
-    <form action="/interview_post/">
+    <form method="POST" action="/interview_post/">
+      {% csrf_token %}
       <button type="submit">Schedule</button>
     </form>
   </li>
