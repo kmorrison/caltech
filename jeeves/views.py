@@ -1,4 +1,6 @@
 from datetime import datetime
+from itertools import groupby
+import operator
 
 from django import forms
 from django.shortcuts import render
@@ -235,9 +237,32 @@ def interview_post(request):
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
-        interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0])
+        interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
+        interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
+        # TODO: Get the name from the form
+        interview_slot['candidate_name'] = 'bob'
 
-        interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room'])
+    schedule_calculator.persist_interview(interviews)
+    return scheduler(request)
+
+def tracker(request):
+    tracker_dict = {
+    for group, interviewer_list in tracker_dict.iteritems():
+        for interviewer in interviewer_list:
+            interviews = interviewer['interviews']
+            interviews.sort(key=operator.itemgetter('day_of_week'))
+            interviews_dict_by_day_of_week = {}
+            for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
+                grouped_interview_list = list(interview_list)
+                interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
+            interviewer['interviews'] = interviews_dict_by_day_of_week
+    return render(
+            request,
+            'tracker.html',
+            dict(
+                tracker_dict = tracker_dict
+            )
+    )              
 
 def new_scheduler(request):
     context = dict(

@@ -11,6 +11,7 @@ from caltech import settings
 
 
 class Interview(models.Model):
+    candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
 
@@ -130,9 +131,8 @@ class Requisition(models.Model):
 class InterviewSlot(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    date = models.DateField()
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
 
 
 DAYS_OF_WEEK = (

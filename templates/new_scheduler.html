@@ -8,17 +8,22 @@
 		}
 </script>
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+<link rel="stylesheet" href="/static/css/my_css.css" />
 
 {% endblock %}
 
 {% block body %}
-<h1>Create an Interview Schedule</h1>
-<h2>Warning: About to Do Science!</h2>
 
 <div id="main-form">
 <form action="/scheduler_post/" method="post">{% csrf_token %}
-    <em>Interview Type</em>
-    <select data-placeholder="Pick an Interview Type" class="chosen-select" style="width:350px;">
+  <div class="form-sec candidate-name">
+    <h3>Candidate Name</h3>
+    <input type="text" name="candidiate_name" class="candidate-name">
+  </div>
+
+  <div class="form-sec type">
+    <h3>Interview Type</h3>
+    <select multiple class="chosen-select">
       <option></option>
       {% for itype in itypes %}
         <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
@@ -26,9 +31,9 @@
     </select>
   </div>
 
-  <div>
-    <em>Requisition</em>
-    <select data-placeholder="Pick a Requisition" class="chosen-select" style="width:350px;">
+  <div class="form-sec req">
+    <h3>Requisition</h3>
+    <select multiple class="chosen-select">
       <option></option>
       {% for req in reqs %}
         <option value={{ req }}>{{ req }}</option>
@@ -36,14 +41,14 @@
     </select>
   </div>
 
-  <div>
-    <em>date</em>
-    <input type="text" name="date" id="date-picker">
+  <div class="form-sec date">
+    <h3>Date</h3>
+    <input autocomplete="off" type="text" name="date" id="date-picker">
   </div>
 
-  <div>
-    <em>Start Time</em>
-    <select data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;">
+  <div class="form-sec start">
+    <h3>Start Time</h3>
+    <select multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
@@ -51,9 +56,9 @@
     </select>
   </div>
 
-  <div>
-    <em>End Time</em>
-    <select data-placeholder="Add a End Time" class="chosen-select" style="width:350px">
+  <div class="form-sec end">
+    <h3>End Time</h3>
+    <select multiple class="chosen-select">
       <option></option>
       {% for ti in times %}
         <option value={{ ti.time_value }}>{{ ti.display_string }}</option>
