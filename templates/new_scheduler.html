@@ -23,7 +23,7 @@
 
   <div class="form-sec type">
     <h3>Interview Type</h3>
-    <select name='interview_type' data-placehoder=" " multiple class="chosen-select">
+    <select name='interview_type' data-placeholder=" " multiple class="chosen-select">
       <option></option>
       {% for itype in itypes %}
         <option value={{ itype.interview_type }}>{{ itype.display_string }}</option>
@@ -69,6 +69,16 @@
 </form>
 </div>
 
-<div id="result"></div>
+<div id="result">
+<ul class="schedule-list">
+  <li class="schedule-item template">
+    <h4 class="room"></h4>
+    <div class="slots"></div>
+    <form action="/interview_post/">
+      <button type="submit">Schedule</button>
+    </form>
+  </li>
+</ul>
+</div>
 {% endblock %}
 

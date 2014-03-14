@@ -30,3 +30,7 @@
   float: left;
   width: 30px;
 }
+
+#result .template {
+  display: none;
+}
