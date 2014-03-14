@@ -491,7 +491,8 @@ class GetInterviewTest(TestCase):
                         'start_time': interview_info['start_time'],
                         'day_of_week': interview_info['start_time'].weekday(),
                         'interview_slot_id': interview_data['interview_slot_id'],
-                        'interview_id': interview_data['interview_id']
+                        'interview_id': interview_data['interview_id'],
+                        'interview_type': 'OS'
                     }]
                 }
             }

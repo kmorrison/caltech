@@ -6,12 +6,43 @@ $(document).ready(function() {
              type:"POST",
              url:"/new_scheduler_post/",
              data: $("#scheduler_form").serialize(),
-             success: function(){
-                 $('#result').html("<p>Success!</p>") 
+             success: function(data){
+               var schedules = data.data; 
+               $.each(schedules, function(i, schedule) {
+                 var template = $('#result .template').clone().removeClass('template'); 
+                 var roomTime = schedule.room.start_time + ' ~ ' + schedule.room.end_time + schedule.room.interviewer;
+
+                 template.find('.room').text(roomTime);
+
+                 $.each(schedule.interview_slots, function(i, slot) {
+                   var slotHtml = $('<p>' + slot.start_time + ' ' + slot.interviewer + '</p>');
+                   template.find('.slots').append(slotHtml);
+                   
+                   var startTimeInput = $('<input type="hidden" name="start_time">')
+                   startTimeInput.val(slot.start_time);
+                   var endTimeInput = $('<input type="hidden" name="end_time">')
+                   endTimeInput.val(slot.end_time);
+
+                   var roomInput = $('<input type="hidden" name="room">')
+                   roomInput.val(schedule.room.interviewer);
+
+                   var interviewerInput = $('<input type="hidden" name="interviewer">')
+                   interviewerInput.val(slot.interviewer);
+
+                   template.find('form').append(startTimeInput);
+                   template.find('form').append(endTimeInput);
+                   template.find('form').append(roomInput);
+                   template.find('form').append(interviewerInput);
+                 });
+
+
+                 $('.schedule-list').append(template); 
+               });
              }
         });
-        return false;
+        event.preventDefault();
   });
+
 });
 
 

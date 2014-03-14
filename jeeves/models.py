@@ -42,9 +42,9 @@ class InterviewTypeChoice(object):
   @property
   def display_string(self):
     return {
-      InterviewType.ON_SITE: 'On Site',
+      InterviewType.ON_SITE: 'OS',
       InterviewType.SKYPE: 'SPI',
-      InterviewType.SKYPE_ON_SITE: 'Skype On Site',
+      InterviewType.SKYPE_ON_SITE: 'SOS',
     }.get(self.interview_type)
 
 
