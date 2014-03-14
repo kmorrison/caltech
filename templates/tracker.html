@@ -9,28 +9,76 @@
 
 {% block body %}
 <table border="1" class="tracker-container">
+
   <tr>
-    <th>Requisition</th>
-    <th>
-       1 week
-       <ul class="week">
-         <li>Mon</li>
-         <li>Tue</li>
-         <li>Wed</li>
-         <li>Thur</li>
-         <li>Fri</li>
-       </ul>
-    </th>
+    <th class="tracker-req"></th>
+    <th class="tracker-day">Mon</th>
+    <th class="tracker-day">Tue</th>
+    <th class="tracker-day">Wed</th>
+    <th class="tracker-day">Thu</th>
+    <th class="tracker-day">Fri</th>
   </tr>
-  {% for cat, stuff in tracker_dict.items %}
+  {% for cat, interviewer in tracker_dict.items %}
     <tr class="category">
-      <td><strong>{{cat}}</strong></td>
-      <td></td>
+      <td class="tracker-cat"><strong>{{ cat|title }}</strong></td>
+      <td class="tracker-cat"></td>
+      <td class="tracker-cat"></td>
+      <td class="tracker-cat"></td>
+      <td class="tracker-cat"></td>
+      <td class="tracker-cat"></td>
     </tr>
-    {% for person in stuff %}
+    {% for person, interviews in interviewer.items %}
       <tr>
-        <td>{{person.interviewer_name}}</td>
-        <td>
+        <td class="tracker-person">{{person}}</td>
+        <td class="tracker-int">
+            {% if interviews.1 %}
+              <div class="hovercard">
+                  {% for interview_info in interviews.1.interviews %}
+                     <p>{{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}</p>
+                  {% endfor %}
+              </div>
+              {{ interviews.1.num_interviews }}
+            {% endif %}
+        </td>
+        <td class="tracker-int">
+            {% if interviews.2 %}
+              <div class="hovercard">
+                  {% for interview_info in interviews.2.interviews %}
+                     <p>{{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}</p>
+                  {% endfor %}
+              </div>
+              {{ interviews.2.num_interviews }}
+            {% endif %}
+        </td>
+        <td class="tracker-int">
+            {% if interviews.3 %}
+              <div class="hovercard">
+                  {% for interview_info in interviews.3.interviews %}
+                     <p>{{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}</p>
+                  {% endfor %}
+              </div>
+              {{ interviews.3.num_interviews }}
+            {% endif %}
+        </td>
+        <td class="tracker-int">
+            {% if interviews.4 %}
+              <div class="hovercard">
+                  {% for interview_info in interviews.4.interviews %}
+                     <p>{{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}</p>
+                  {% endfor %}
+              </div>
+              {{ interviews.4.num_interviews }}
+            {% endif %}
+        </td>
+        <td class="tracker-int">
+            {% if interviews.5 %}
+              <div class="hovercard">
+                  {% for interview_info in interviews.5.interviews %}
+                     <p>{{ interview_info.room }} from {{ interview_info.start_time }} to {{ interview_info.end_time }}</p>
+                  {% endfor %}
+              </div>
+              {{ interviews.5.num_interviews }}
+            {% endif %}
         </td>
       </tr>
     {% endfor %} 

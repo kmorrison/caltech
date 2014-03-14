@@ -12,6 +12,17 @@ $(document).ready(function() {
         });
         return false;
   });
+
+  $('.hovercard').hover(function() {
+      $(this).stop(true, false).show();
+  }, function() {
+      $('.hovercard').hide();
+  });
+  $('.tracker-int').hover(function() {
+      $(this).find('.hovercard').show(); // show() doesn't seem to work with delay
+  }, function() {
+      $(this).find('.hovercard').hide();
+  });
 });
 
 

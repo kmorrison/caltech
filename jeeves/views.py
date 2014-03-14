@@ -457,6 +457,8 @@ def new_scheduler_post(request):
             interviewer_groups_with_calendars,
             time_period=time_period,
     )
+    if not schedules:
+        return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
 
     scheduler_post_result = {
         'form_is_valid': form_is_valid,

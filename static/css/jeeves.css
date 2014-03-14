@@ -509,3 +509,67 @@ nav a{
 	border-top: 20px solid #4CC552;
 	background: #7F7F7F;
 }
+
+.tracker-container{
+  width: 100%;
+  border:#fafafa 1px solid;
+
+  -moz-border-radius:3px;
+  -webkit-border-radius:3px;
+  border-radius:3px;
+
+}
+
+.tracker-container th{
+  padding:21px 25px 22px 25px;
+  border-top:1px solid #fafafa;
+  border-bottom:1px solid #e0e0e0;
+
+  background: #ededed;
+  background: -webkit-gradient(linear, left top, left bottom, from(#ededed), to(#ebebeb));
+  background: -moz-linear-gradient(top,  #ededed,  #ebebeb);
+}
+
+
+.tracker-container td{
+  padding:18px;
+}
+
+.tracker-day{
+  width: 16%;
+}
+
+.tracker-req{
+  width: 20%;
+}
+
+.tracker-int{
+  text-align: center;
+  border:1px solid #e0e0e0;
+
+  background: #fafafa;
+  position: relative;
+  cursor: pointer;
+}
+
+.tracker-cat{
+  background: #fafafa;
+}
+
+.hovercard {
+    color: #FFF;
+    clear: both;
+    float: none;
+    width: 200px;
+    background: #000;
+    padding: 10px;
+    font: 11px Arial, Helvetica, sans-serif;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    position: absolute;
+    top: 50px;
+    border: 2px solid #999;
+    display: none;
+    z-index: 3;
+}
