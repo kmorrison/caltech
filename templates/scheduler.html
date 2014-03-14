@@ -55,7 +55,7 @@
         {% for interview_slot in schedule.interview_slots %}
         <tr>
             <td class="schedule-interview-time">{{interview_slot.display_time}}</td>
-            <td class="schedule-interview-name">{{interview_slot.interviewer}}</td>
+            <td class="schedule-interview-name">{{interview_slot.interviewer_name}}</td>
             <td class="schedule-interview-pref">
                 <span class="ui-icon {%if interview_slot.is_inside_time_preference%} ui-icon-check {%else%} ui-icon-minus {%endif%}"></span>
             </td>

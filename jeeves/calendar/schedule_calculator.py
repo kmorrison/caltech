@@ -30,8 +30,10 @@ class InterviewSlot(object):
         is_inside_time_preference=False,
         gets_buffer=False,
         number_of_interviews='n/a',
+        interviewer_name="",
     ):
         self.interviewer = interviewer
+        self.interviewer_name = interviewer_name
         self.start_time = start_time
         self.end_time = end_time
 
@@ -203,11 +205,13 @@ def possible_schedules(interviewer_groups, time_period, possible_break, max_sche
 
         else:
             address_of_anchor = possible_order[0].interviewer.address
+            name_of_anchor = possible_order[0].interviewer.display_name
             for possible_slot in possible_interview_chunks(possible_order[0].free_times):
                 possible_order[0] = InterviewSlot(
                     interviewer=address_of_anchor,
                     start_time=possible_slot.start_time,
                     end_time=possible_slot.end_time,
+                    interviewer_name=name_of_anchor
                 )
 
                 validated_order = try_order_with_anchor(possible_order, anchor_index=0)
@@ -256,12 +260,12 @@ def try_order_with_anchor(possible_order, anchor_index):
         if not interviewer.has_availability_during(required_slot):
             # This order won't work, return it as invalid
             return None
-
         interview_slots.append(
             InterviewSlot(
                 interviewer=interviewer.interviewer.address,
                 start_time=required_slot.start_time,
                 end_time=required_slot.end_time,
+                interviewer_name=interviewer.interviewer.display_name,
             )
         )
 
@@ -400,7 +404,7 @@ def filter_free_times_for_length(free_times):
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
 
 
-def persist_interview(interview_infos, recruiter_id=None):
+def persist_interview(interview_infos, interview_type, recruiter_id=None):
     interview_info = interview_infos[0]
     room_id = interview_info['room_id']
     candidate_name = interview_info['candidate_name']
@@ -408,8 +412,8 @@ def persist_interview(interview_infos, recruiter_id=None):
     interview = models.Interview.objects.create(
         candidate_name=candidate_name,
         room_id=room_id,
-        type=models.InterviewType.ON_SITE,
-        recruiter_id=recruiter_id
+        recruiter_id=recruiter_id,
+        type=interview_type
     )
 
     for interview_info in interview_infos:

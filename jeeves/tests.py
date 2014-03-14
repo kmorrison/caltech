@@ -463,6 +463,7 @@ def create_interview_data(recruiter_id=None):
     }
     interview_id = schedule_calculator.persist_interview(
         [interview_info],
+        models.InterviewType.ON_SITE,
         recruiter_id=recruiter_id
     )
 

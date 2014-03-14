@@ -242,6 +242,7 @@ def interview_post(request):
 
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
+    interview_type = int(interview_form.pop('interview_type')[0])
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
@@ -249,9 +250,9 @@ def interview_post(request):
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
         # TODO: Get the name from the form
-        interview_slot['candidate_name'] = 'bob'
+        interview_slot['candidate_name'] = interview_form['candidate_name'][0]
 
-    schedule_calculator.persist_interview(interviews)
+    schedule_calculator.persist_interview(interviews, interview_type)
     return redirect('/new_scheduler?success=1')
 
 def get_color_group_for_requisition(requisition):
@@ -487,7 +488,8 @@ def get_interviewer_set(interviewer_type, requisition):
 
 def new_scheduler_post(request):
     form_data = request.POST
-
+    interview_type = int(form_data['interview_type'])
+    candidate_name = form_data['candidate_name']
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
 
@@ -495,7 +497,7 @@ def new_scheduler_post(request):
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
     requisition = models.Requisition.objects.filter(name='Backend')[0]
-    interviewer_groups = get_interview_groups_with_requirements(requisition, int(form_data['interview_type']))
+    interviewer_groups = get_interview_groups_with_requirements(requisition, interview_type)
     time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
 
     calendar_responses = [
@@ -523,7 +525,9 @@ def new_scheduler_post(request):
 
     scheduler_post_result = {
         'form_is_valid': form_is_valid,
-        'data': _dump_schedules_into_json(schedules)
+        'data': _dump_schedules_into_json(schedules),
+        'interview_type': interview_type,
+        'candidate_name': candidate_name
     }
 
     return HttpResponse(simplejson.dumps(scheduler_post_result), mimetype='application/json')
