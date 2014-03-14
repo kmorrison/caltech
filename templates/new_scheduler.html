@@ -33,14 +33,27 @@
   </div>
 
   <div>
+    <em>date</em>
+    <input type="text" name="date" id="date-picker">
+  </div>
+
+  <div>
     <em>Start Time</em>
-    <select data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;" tabindex="2">
+    <select data-placeholder="Add a Start Time" class="chosen-select" style="width:350px;">
+      <option></option>
+      {% for ti in times %}
+        <option value={{ ti }}>{{ ti }}</option>
+      {% endfor %}
     </select>
   </div>
 
   <div>
     <em>End Time</em>
-    <select data-placeholder="Add a End Time" class="chosen-select" style="width:350px;" tabindex="2">
+    <select data-placeholder="Add a End Time" class="chosen-select" style="width:350px">
+      <option></option>
+      {% for ti in times %}
+        <option value={{ ti }}>{{ ti }}</option>
+      {% endfor %}
     </select>
   </div>
     
