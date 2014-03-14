@@ -250,13 +250,16 @@ def interview_post(request):
 def tracker(request):
     if 'start_date' not in request.GET:
         today = date.today()
-        start_date = today + timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days=4)
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=5)
     else:
         start_date = date.fromtimestamp(request.GET['start_date'])
         end_date = date.fromtimestamp(request.GET['end_date'])
 
-    tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
+    tracker_dict = schedule_calculator.get_interviews_with_all_interviewers(
+        start_date,
+        end_date
+    )
     for group, interviewer_dict in tracker_dict.iteritems():
         for interviewer_name, interviews in interviewer_dict.items():
             interviews.sort(key=operator.itemgetter('day_of_week'))
@@ -264,19 +267,19 @@ def tracker(request):
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
                 for interview in grouped_interview_list:
-                    interview['date'] = datetime.fromtimestamp(interview['start_time']).date().strftime("%x")
-                    interview['start_time'] = datetime.fromtimestamp(interview['start_time']).strftime("%I:%M")
-                    interview['end_time'] = datetime.fromtimestamp(interview['end_time']).strftime("%I:%M")
+                    interview['date'] = interview['start_time'].date().strftime("%x")
+                    interview['start_time'] = interview['start_time'].strftime("%I:%M")
+                    interview['end_time'] = interview['end_time'].strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
             interviewer_dict[interviewer_name] = interviews_dict_by_day_of_week
-    import pdb; pdb.set_trace()
+    import ipdb; ipdb.set_trace()
     return render(
             request,
             'tracker.html',
             dict(
                 tracker_dict = tracker_dict
             )
-    )              
+    )
 
 def new_scheduler(request):
     context = dict(

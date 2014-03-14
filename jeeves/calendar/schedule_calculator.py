@@ -402,7 +402,7 @@ class _InterviewGetter(object):
                     req_interviewers[interview_slot.interviewer.display_name]
 
                 req_interviewer_slots.append(
-                    interviews_data
+                    interviews_data.copy()
                 )
 
         return output
@@ -412,3 +412,27 @@ class _InterviewGetter(object):
             start_time__gte=self._start_time,
             end_time__lte=self._end_time,
         )
+
+def get_all_req_to_interviewers():
+    reqs = models.Requisition.objects.all()
+    req_to_interviewers_map = {}
+
+    for req in reqs:
+        req_to_interviewers_map[req.name] = [
+            interviewer.name for interviewer in req.interviewers.all()
+        ]
+
+    return req_to_interviewers_map
+
+
+def get_interviews_with_all_interviewers(*args, **kwargs):
+    interviews = get_interviews(*args, **kwargs)
+    req_to_interviewers = get_all_req_to_interviewers()
+
+    for req, interviewers in req_to_interviewers.iteritems():
+        interviews.setdefault(req, {})
+
+        for interviewer in interviewers:
+            interviews[req].setdefault(interviewer, [])
+
+    return interviews
