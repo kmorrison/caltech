@@ -1,6 +1,9 @@
+import simplejson
+
 from datetime import datetime
 
 from django import forms
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -304,18 +307,32 @@ def get_time_period(start_time, end_time, date):
       date_time = datetime.strptime("{date} {time}".format(date=date, time=time), "%m/%d/%Y %H:%M:%S")
       return date_time.strftime(TIME_FORMAT)
 
-    start_time = form['start_time']
-    end_time = form['end_time']
-    date = form['date']
     start_datetime = convert_form_datetime_to_sql_datetime(date, start_time)
     end_datetime = convert_form_datetime_to_sql_datetime(date, end_time)
     return (start_datetime, end_datetime)
 
+def error_check_scheduler_form_post(form):
+    error_fields = []
+    for field, value in form.iteritems():
+        if not value:
+            error_fields.append(field)
+    if error_fields:
+        return False, error_fields
+    else:
+        return True, []
+
+
+def get_interviewer_set(interviewer_type, requisition):
+    return []
 
 def new_scheduler_post(request):
-    # error checking for request.POST
-
     form_data = request.POST
+
+    # error checking for request.POST
+    form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
+
+    if not form_is_valid:
+        return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
     interviewer_groups = get_interviewer_set(form_data['interview_type'], form_data['requisition'])
     time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
@@ -338,18 +355,37 @@ def new_scheduler_post(request):
 
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
-            time_period=scheduler_form.time_period,
-            possible_break=scheduler_form.possible_break,
+            time_period=time_period,
     )
 
     return render(
             request,
             'scheduler.html',
             dict(
-                requisition_formset=requisition_formset,
-                scheduler_form=scheduler_form,
-                valid_submission=valid_submission,
                 schedules=schedules,
             )
     )
 
+def _dump_schedules_into_json(schedules):
+    data = []
+    for schedule in schedules:
+        schedule_data = {
+            'priority': schedule.priority,
+            'room': _dump_interview_slot_to_dictionary(schedule.room),
+        }
+
+        interview_slots = []
+        for slot in schedule.interview_slots:
+            interview_slots.append(_dump_interview_slot_to_dictionary(slot))
+        schedule_data['interview_slots'] = interview_slots
+
+        data.append(schedule_data)
+
+    return simplejson.dumps(data)
+
+def _dump_interview_slot_to_dictionary(slot):
+    time_format = "%I:%M"
+    data = slot.__dict__
+    data['start_time'] = data['start_time'].strftime(time_format)
+    data['end_time'] = data['end_time'].strftime(time_format)
+    return data
