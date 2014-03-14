@@ -33,9 +33,8 @@
             <form action="/interview_post/" method="post">{% csrf_token %}
                 {% for interview_slot in schedule.interview_slots %}
                 <div style="display:none">
-                    <input type="hidden" name="start_time" value="{{interview_slot.display_start_time}}">
-                    <input type="hidden" name="end_time" value="{{interview_slot.display_end_time}}">
-                    <input type="hidden" name="date" value="{{interview_slot.date}}">
+                    <input type="hidden" name="start_time" value="{{interview_slot.start_datetime}}">
+                    <input type="hidden" name="end_time" value="{{interview_slot.end_datetime}}">
                     <input type="hidden" name="room" value="{{schedule.room.interviewer}}">
                     <input type="hidden" name="interviewer" value="{{interview_slot.interviewer}}">
                 </div>

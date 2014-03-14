@@ -34,7 +34,7 @@ class Interviewer(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
+    interviews = models.ManyToManyField(Interview, through='InterviewSlot')
 
     def __unicode__(self):
         return self.display_name
@@ -75,11 +75,12 @@ class Requisition(models.Model):
         ordering = ('name',)
 
 
-class ScheduledInterview(models.Model):
+class InterviewSlot(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
     start_time = models.TimeField()
     end_time = models.TimeField()
+    date = models.DateField()
 
 
 DAYS_OF_WEEK = (
@@ -140,4 +141,4 @@ admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
 admin.site.register(Room)
-admin.site.register(ScheduledInterview)
+admin.site.register(InterviewSlot)

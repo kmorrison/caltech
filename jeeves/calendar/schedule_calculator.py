@@ -2,6 +2,7 @@ from datetime import timedelta
 import collections
 import itertools
 import random
+import time
 
 from caltech import secret
 from jeeves import models
@@ -50,6 +51,15 @@ class InterviewSlot(object):
     @property
     def display_date(self):
         return self.start_time.date().strftime("%x")
+
+    @property
+    def start_datetime(self):
+        return time.mktime(self.start_time.timetuple())
+
+    @property
+    def end_datetime(self):
+        return time.mktime(self.end_time.timetuple())
+    
     
 
 Interview = collections.namedtuple('Interview', ('interview_slots', 'room', 'priority'))
