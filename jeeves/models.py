@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from collections import namedtuple
+
 from django.db import models
 from django.contrib import admin
 
@@ -9,6 +11,7 @@ from caltech import settings
 
 
 class Interview(models.Model):
+    candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
 
@@ -69,7 +72,9 @@ class Interviewer(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    interviews = models.ManyToManyField(Interview, through='ScheduledInterview')
+    interviews = models.ManyToManyField(Interview, through='InterviewSlot')
+
+    preferences_address = models.CharField(max_length=256, null=True, blank=True)
 
     def __unicode__(self):
         return self.display_name
@@ -77,6 +82,10 @@ class Interviewer(models.Model):
     @property
     def address(self):
         return "%s@%s" % (self.name, self.domain)
+
+    @property
+    def external_id(self):
+        return self.address
 
     class Meta:
         ordering = ('display_name',)
@@ -95,8 +104,15 @@ class Room(models.Model):
     def address(self):
         return "%s@%s" % (self.name, self.domain)
 
+    @property
+    def external_id(self):
+        return self.address
+
     class Meta:
         ordering = ('display_name',)
+
+
+InterviewerStruct = namedtuple('InterviewerStruct', ['address', 'external_id'])
 
 
 class Requisition(models.Model):
@@ -110,11 +126,11 @@ class Requisition(models.Model):
         ordering = ('name',)
 
 
-class ScheduledInterview(models.Model):
+class InterviewSlot(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
 
 
 DAYS_OF_WEEK = (
@@ -175,4 +191,4 @@ admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(Preference)
 admin.site.register(Room)
-admin.site.register(ScheduledInterview)
+admin.site.register(InterviewSlot)

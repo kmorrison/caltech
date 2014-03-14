@@ -1,0 +1,23 @@
+#main-form {
+}
+
+#main-form .type {
+  margin-right: 15px;
+} 
+
+#main-form .form-sec {
+  margin-bottom: 15px;
+}
+
+#main-form .form-sec .chosen-container {
+  width: 240px !important;
+}
+
+#main-form input {
+  border: 1px solid #aaa;
+}
+
+#main-form #date-picker,
+#main-form .candidate-name {
+  width: 240px;
+}
