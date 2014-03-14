@@ -1,6 +1,8 @@
 import simplejson
 
+from datetime import date
 from datetime import datetime
+from datetime import timedelta
 from itertools import groupby
 import operator
 
@@ -250,7 +252,79 @@ def interview_post(request):
     return scheduler(request)
 
 def tracker(request):
+    if 'start_date' not in request.GET:
+        today = date.today()
+        start_date = today + timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=4)
+    else:
+        start_date = date.fromtimestamp(request.GET['start_date'])
+        end_date = date.fromtimestamp(request.GET['end_date'])
     tracker_dict = {
+        'backend': 
+            [{
+                'interviewer_name': 'chao',
+                'interviews': [{
+                                    'room': 'Airport',
+                                    'start_time': 1234.0,
+                                    'end_time': 123.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'House',
+                                    'start_time': 1234.0,
+                                    'end_time': 120.0,
+                                    'day_of_week': 0
+                                }]
+            },
+            {
+                'interviewer_name': 'sumeet',
+                'interviews': [{
+                                    'room': 'Candy',
+                                    'start_time': 1230.0 ,
+                                    'end_time': 121.0,
+                                    'day_of_week': 0
+                                },
+                                {
+                                    'room': 'Warehouse',
+                                    'start_time': 1232.0,
+                                    'end_time': 122.0,
+                                    'day_of_week': 1
+                                }]
+            }],
+        'frontend': 
+            [{
+                'interviewer_name': 'alanq',
+                'interviews': [{
+                                    'room': 'Shack',
+                                    'start_time': 1134.0 ,
+                                    'end_time': 123.0,
+                                    'day_of_week': 4
+                                },
+                                {
+                                    'room': 'Rodeo',
+                                    'start_time': 1034.0,
+                                    'end_time': 120.0,
+                                    'day_of_week': 4
+                                }]
+            },
+            {
+                'interviewer_name': 'mtakaki',
+                'interviews': [{
+                                    'room': 'Man',
+                                    'start_time': 1250.0 ,
+                                    'end_time': 121.0,
+                                    'day_of_week': 2
+                                },
+                                {
+                                    'room': 'Bathroom',
+                                    'start_time': 1262.0,
+                                    'end_time': 122.0,
+                                    'day_of_week': 1
+                                }]
+            }]
+            
+    }
+    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
     for group, interviewer_list in tracker_dict.iteritems():
         for interviewer in interviewer_list:
             interviews = interviewer['interviews']
@@ -258,6 +332,10 @@ def tracker(request):
             interviews_dict_by_day_of_week = {}
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
+                for interview in grouped_interview_list:
+                    interview['date'] = datetime.fromtimestamp(interview['start_time']).date().strftime("%x")
+                    interview['start_time'] = datetime.fromtimestamp(interview['start_time']).strftime("%I:%M")
+                    interview['end_time'] = datetime.fromtimestamp(interview['end_time']).strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
             interviewer['interviews'] = interviews_dict_by_day_of_week
     return render(
