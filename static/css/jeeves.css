@@ -606,13 +606,71 @@ ul{
 }
 
 .hovercard p{
-  padding-bottom:12px;
+    padding-bottom:12px;
 }
 
 #interviewerSearchInput {
-  width: 300px;
+    width: 300px;
 }
 
-a{
-  text-color: #41b7d8;
+.hovercard-submit {
+  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #4197ee) );
+  background:-moz-linear-gradient( center top, #79bbff 5%, #4197ee 100% );
+  background-color:#79bbff;
+  -webkit-border-top-left-radius:31px;
+  -moz-border-radius-topleft:31px;
+  border-top-left-radius:31px;
+  -webkit-border-top-right-radius:31px;
+  -moz-border-radius-topright:31px;
+  border-top-right-radius:31px;
+  -webkit-border-bottom-right-radius:31px;
+  -moz-border-radius-bottomright:31px;
+  border-bottom-right-radius:31px;
+  -webkit-border-bottom-left-radius:31px;
+  -moz-border-radius-bottomleft:31px;
+  border-bottom-left-radius:31px;
+  text-indent:0px;
+  border:1px solid #469df5;
+  display:inline-block;
+  color:#ffffff;
+  font-size:11px;
+  height:20px;
+  line-height:15px;
+  width:45px;
+  text-decoration:none;
+  text-align:center;
+}
+
+.hovercard-delete {
+  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffc477), color-stop(1, #fb9e25) );
+  background:-moz-linear-gradient( center top, #ffc477 5%, #fb9e25 100% );
+  background-color:#ffc477;
+  -webkit-border-top-left-radius:31px;
+  -moz-border-radius-topleft:31px;
+  border-top-left-radius:31px;
+  -webkit-border-top-right-radius:31px;
+  -moz-border-radius-topright:31px;
+  border-top-right-radius:31px;
+  -webkit-border-bottom-right-radius:31px;
+  -moz-border-radius-bottomright:31px;
+  border-bottom-right-radius:31px;
+  -webkit-border-bottom-left-radius:31px;
+  -moz-border-radius-bottomleft:31px;
+  border-bottom-left-radius:31px;
+  text-indent:0px;
+  border:1px solid #eeb44f;
+  display:inline-block;
+  color:#ffffff;
+  font-family:Arial;
+  font-size:11px;
+  font-style:normal;
+  height:20px;
+  line-height:15px;
+  width:53px;
+  text-decoration:none;
+  text-align:center;}
+
+#interviewer_id {
+  width: 80px;
+  font-size: 10px;
 }

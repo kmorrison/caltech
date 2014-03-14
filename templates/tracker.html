@@ -86,9 +86,21 @@
             {% if interviewer_info.interviews.4 %}
               <div class="hovercard">
                   {% for interview_info in interviewer_info.interviews.4.interviews %}
-                     <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }}<br/>
-                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }}
-                     </p>
+                     <form action="/modify_interview/" method="post">{% csrf_token %}
+                      <p>{{ interview_info.interview_type }} - {{ interview_info.candidate_name }} <br/>
+                        Room {{ interview_info.room }}: {{ interview_info.start_time }} - {{ interview_info.end_time }} <br/>
+                      <input type="hidden" value="{{ interview_info.interview_slot_id }}" name="interview_slot_id">
+                      <input type="hidden" value="{{ interview_info.interview_id }}" name="interview_id">
+                      <input class="hovercard-delete" type="submit" name="hovercard-submit" value="Remove">
+                      <input class="hovercard-submit" type="submit" name="hovercard-submit" value="Modify">
+                      <select name="interviewer_id" class="interviwer_id">
+                          <option></option>
+                      {% for i in all_interviewers %}
+                          <option value="{{ i.id }}">{{ i.display_name }}</option>
+                      {% endfor %}
+                      </select>
+                      </p>
+                     </form>
                   {% endfor %}
               </div>
               {{ interviewer_info.interviews.4.num_interviews }}

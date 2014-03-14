@@ -11,6 +11,7 @@ import operator
 from django import forms
 from django.shortcuts import render
 from django.shortcuts import render_to_response
+from django.shortcuts import redirect
 from django.template import RequestContext
 from django.http import HttpResponse
 
@@ -391,6 +392,8 @@ def tracker(request):
                 last_week_start = time.mktime(last_week_start.timetuple()),
                 next_week_start = time.mktime(next_week_start.timetuple()),
                 week_info = week_info,
+                all_interviewers=all_interviewers(),
+                context_instance=RequestContext(request)
             )
     )
 
@@ -401,6 +404,17 @@ def new_scheduler(request):
       times=all_times()
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
+
+def modify_interview(request):
+    form_data = request.POST
+    if form_data['hovercard-submit'] == 'Modify':
+        if form_data['interview_slot_id'] and form_data['interviewer_id']:
+            schedule_calculator.change_interviewer(form_data['interview_slot_id'], form_data['interviewer_id'])
+            return redirect('/tracker/')
+    elif form_data['hovercard-submit'] == 'Remove':
+        return redirect('/tracker/')
+    else:
+        return redirect('/tracker/')
 
 def scheduler_post(request):
     requisition_formset = RequisitionScheduleFormset(request.POST)
