@@ -1,0 +1,79 @@
+#main-form {
+  width: 350px;
+  float: left;
+}
+
+#main-form .type {
+  margin-right: 15px;
+} 
+
+#main-form .form-sec {
+  margin-bottom: 15px;
+}
+
+#main-form .form-sec .chosen-container {
+  width: 250px !important;
+}
+
+#main-form input {
+  border: 1px solid #aaa;
+}
+
+#main-form #date-picker,
+#main-form .candidate-name {
+  width: 250px;
+}
+
+.tracker-container .week {
+  overflow: hidden;
+}
+
+.tracker-container .week li {
+  float: left;
+  width: 30px;
+}
+
+#result {
+  width: 600px;
+  float: right;
+}
+
+#result .template {
+  display: none;
+}
+
+.schedule-list {
+  list-style-type: none;
+}
+
+.schedule-item {
+  list-style-type: none;
+  width: 400px;
+  height: 180px;
+  border: 1px solid #999;
+  background: #eceddf;
+  padding: 10px;
+  position: relative;
+}
+
+.schedule-item h4 {
+  color: #45760d;
+  font-weight: bold;
+  font-size: 18px;
+  font-family: Georgia;
+  margin-bottom: 5px;
+}
+
+.schedule-item .slots {
+  color: #639ba3; 
+}
+
+.schedule-item .chosen-container {
+  width: 150px !important;
+}
+
+.schedule-item .cta {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
