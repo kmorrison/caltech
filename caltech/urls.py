@@ -14,6 +14,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
 
+    url(r'^$', 'jeeves.views.index'),
     url(r'^index/', 'jeeves.views.index'),
     url(r'^new_scheduler/', 'jeeves.views.new_scheduler'),
     url(r'^scheduler/', 'jeeves.views.scheduler'),
