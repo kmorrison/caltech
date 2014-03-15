@@ -30,6 +30,7 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 START_HOUR = 9
 HOURS_PER_DAY = 10
 CHUNKS_PER_HOUR = 4  # Must divide evenly into 60
+SCHEDULE_TIME_FORMAT = "%I:%M"
 
 # TODO: Where does this go?
 def all_reqs():
@@ -240,21 +241,57 @@ def scheduler(request):
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
 def interview_post(request):
-
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
+        interview_slot['start_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
+        interview_slot['end_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
-        # TODO: Get the name from the form
         interview_slot['candidate_name'] = interview_form['candidate_name'][0]
 
     schedule_calculator.persist_interview(interviews, interview_type)
+
+    # Sorting so we can make the content in the right order.
+    interviews = sorted(interviews, key=lambda x: x['start_time'])
+
+    body_content = '\n'.join(create_calendar_event_content(interviews))
+
+    start_time = datetime.fromtimestamp(float(interview_form['room_start_time'][0]))
+    start_time = start_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    end_time = datetime.fromtimestamp(float(interview_form['room_end_time'][0]))
+    end_time = end_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    interview_type_string = models.InterviewTypeChoice(interview_type).display_string
+
+    calendar_response = calendar_client.create_event(
+        '%(type)s - %(candidate)s (%(requisition)s)' % {
+            'type': interview_type_string,
+            'candidate': interview_form['candidate_name'][0],
+            'requisition': interview_form['requisition'][0],
+        },
+        body_content,
+        start_time,
+        end_time,
+        interview_form['external_id'][0],
+        interview_form['room'][0],
+    )
+
     return redirect('/new_scheduler?success=1')
+
+def create_calendar_event_content(interviews):
+    list_of_interviewers = []
+
+    for interview in interviews:
+            list_of_interviewers.append('%(time)s: %(name)s' % { 'time': interview['start_time'].timetz().strftime(SCHEDULE_TIME_FORMAT), 'name': interview['interviewer'] })
+
+    return list_of_interviewers
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
@@ -565,11 +602,10 @@ def _dump_schedules_into_json(schedules):
     return data
 
 def _dump_interview_slot_to_dictionary(slot):
-    time_format = "%I:%M"
     data = slot.__dict__
     data['start_datetime'] = time.mktime(data['start_time'].timetuple())
     data['end_datetime'] = time.mktime(data['end_time'].timetuple())
-    data['start_time'] = data['start_time'].strftime(time_format)
-    data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    data['start_time'] = data['start_time'].strftime(SCHEDULE_TIME_FORMAT)
+    data['end_time'] = data['end_time'].strftime(SCHEDULE_TIME_FORMAT)
 
+    return data
