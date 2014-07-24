@@ -31,6 +31,34 @@ class CalendarQuery(object):
         return "%s" % ([inte.external_id for inte in self.interviewers],)
 
 
+class CalendarCreate(object):
+
+    def __init__(self, title, body, time_start, time_end, location, location_name):
+        self.title = title
+        self.body = body
+        self.time_start = time_start
+        self.time_end = time_end
+        self.location = location
+        self.location_name = location_name
+
+    def to_query_body(self):
+        return dict(
+            calendarId=secret.INTERVIEW_CALENDAR_GROUP_ID,
+            start=dict(
+                dateTime=lib.format_datetime_utc(self.time_start)
+            ),
+            end=dict(
+                dateTime=lib.format_datetime_utc(self.time_end)
+            ),
+            summary=self.title,
+            description=self.body,
+            attendees=[dict(
+                email=self.location
+            )],
+            location=self.location_name,
+        )
+
+
 class InterviewCalendar(object):
 
     def __init__(self, interviewer, period_of_interest, start_end_pairs):
@@ -144,6 +172,9 @@ class Client(object):
     def get_calendars(self, interviewers, time_period):
         return self._service_client.process_calendar_query(CalendarQuery(interviewers, time_period))
 
+    def create_event(self, title, body, time_start, time_end, location, location_name):
+        return self._service_client.process_calendar_create(CalendarCreate(title, body, time_start, time_end, location, location_name))
+
 class MockServiceClient(object):
 
     def process_calendar_query(self, calendar_query):
@@ -212,6 +243,12 @@ class ServiceClient(object):
                 calendar_query,
                 self._service.freebusy().query(body=query_body).execute()
         )
+
+    @lib.retry_decorator(BadStatusLine)
+    def process_calendar_create(self, calendar):
+        body = calendar.to_query_body()
+
+        #return self._service.events().insert(calendarId="mtakaki@yelp.com", body=body).execute()
 
 
 # Define a module level client that people can import

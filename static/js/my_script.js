@@ -34,15 +34,40 @@ $(document).ready(function() {
                    var endTimeInput = $('<input type="hidden" name="end_time">')
                    endTimeInput.val(slot.end_datetime);
 
-                   var roomInput = $('<input type="hidden" name="room">')
-                   roomInput.val(schedule.room.interviewer);
-
                    var interviewerInput = $('<input type="hidden" name="interviewer">')
                    interviewerInput.val(slot.interviewer);
 
+                   var roomInput = $('<input type="hidden" name="room">')
+                   roomInput.val(schedule.room.interviewer);
+
+                 var externalIdInput = $('<input type="hidden" name="external_id">')
+                 externalIdInput.val(schedule.room.external_id);
+
+                 var roomStartTimeInput = $('<input type="hidden" name="room_start_time">')
+                 roomStartTimeInput.val(schedule.room.start_datetime);
+
+                 var roomEndTimeInput = $('<input type="hidden" name="room_end_time">')
+                 roomEndTimeInput.val(schedule.room.end_datetime);
+
+                 template.find('form').append(roomInput);
+                 template.find('form').append(roomStartTimeInput);
+                 template.find('form').append(roomEndTimeInput);
+                 template.find('form').append(externalIdInput);
+
+                 var candidateNameInput = $('<input type="hidden" name="candidate_name">')
+                 candidateNameInput.val($('input[name="candidate_name"]').val());
+                 template.find('form').append(candidateNameInput);
+
+                 var interviewTypeInput = $('<input type="hidden" name="interview_type">')
+                 interviewTypeInput.val($('.type .chosen-select').val());
+                 template.find('form').append(interviewTypeInput);
+
+                 var requisitionInput = $('<input type="hidden" name="requisition">')
+                 requisitionInput.val($('.req .chosen-select').val());
+                 template.find('form').append(requisitionInput);
+
                    template.find('form').append(startTimeInput);
                    template.find('form').append(endTimeInput);
-                   template.find('form').append(roomInput);
                    template.find('form').append(interviewerInput);
                  });
 
