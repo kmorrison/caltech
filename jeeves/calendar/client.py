@@ -248,7 +248,7 @@ class ServiceClient(object):
     def process_calendar_create(self, calendar):
         body = calendar.to_query_body()
 
-        #return self._service.events().insert(calendarId="mtakaki@yelp.com", body=body).execute()
+        return self._service.events().insert(calendarId=secret.INTERVIEW_CALENDAR_GROUP_ID, body=body).execute()
 
 
 # Define a module level client that people can import

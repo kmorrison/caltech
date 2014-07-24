@@ -275,7 +275,7 @@ def interview_post(request):
     calendar_response = calendar_client.create_event(
         '%(type)s - %(candidate)s (%(requisition)s)' % {
             'type': interview_type_string,
-            'candidate': interview_form['candidate_name'][0],
+            'candidate': candidate_name[0],
             'requisition': interview_form['requisition'][0],
         },
         body_content,
