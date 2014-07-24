@@ -244,6 +244,8 @@ def interview_post(request):
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
+    recruiter_id = interview_form.pop('recruiter_id')
+    candidate_name = interview_form.pop('candidate_name')
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
@@ -251,7 +253,7 @@ def interview_post(request):
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
         # TODO: Get the name from the form
-        interview_slot['candidate_name'] = interview_form['candidate_name'][0]
+        interview_slot['candidate_name'] = candidate_name[0]
 
     schedule_calculator.persist_interview(interviews, interview_type)
     return redirect('/new_scheduler?success=1')
