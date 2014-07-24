@@ -1,1 +1,2 @@
 ALTER TABLE jeeves_interviewer ADD COLUMN "preferences_address" varchar(256);
+ALTER TABLE jeeves_interview ADD COLUMN "google_event_id" varchar(256) default '';

@@ -175,6 +175,9 @@ class Client(object):
     def create_event(self, title, body, time_start, time_end, location, location_name):
         return self._service_client.process_calendar_create(CalendarCreate(title, body, time_start, time_end, location, location_name))
 
+    def delete_event(self, google_event_id):
+        return self._service_client.process_calendar_delete(google_event_id)
+
 class MockServiceClient(object):
 
     def process_calendar_query(self, calendar_query):
@@ -249,6 +252,10 @@ class ServiceClient(object):
         body = calendar.to_query_body()
 
         return self._service.events().insert(calendarId=secret.INTERVIEW_CALENDAR_GROUP_ID, body=body).execute()
+
+    @lib.retry_decorator(BadStatusLine)
+    def process_calendar_delete(self, google_event_id):
+        return self._service.events().delete(calendarId=secret.INTERVIEW_CALENDAR_GROUP_ID, eventId=google_event_id).execute()
 
 
 # Define a module level client that people can import
