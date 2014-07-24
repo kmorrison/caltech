@@ -277,83 +277,10 @@ def tracker(request):
     last_week_start = start_date - timedelta(days=7)
     next_week_start = start_date + timedelta(days=7)
 
-    tracker_dict_2 = schedule_calculator.get_interviews_with_all_interviewers(
+    tracker_dict = schedule_calculator.get_interviews_with_all_interviewers(
         start_date,
         end_date
     )
-    tracker_dict = {'backend': {
-                        'chao': [{
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'House',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                }],
-                        'sumeet': [{
-                                    'candidate_name': 'Bobby',
-                                    'room': 'Candy',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'Warehouse',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 1
-                                }]
-                },
-                'ads': {
-                    'alanq': [{
-                                'candidate_name': 'Bob',
-                                'room': 'Shack',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            },
-                            {
-                                'candidate_name': 'Eli',
-                                'room': 'Rodeo',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            }],
-                    'mtakaki': [{
-                                'candidate_name': 'Jon',
-                                'room': 'Man',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 2
-                            },
-                            ]
-                }
-    }
-    tracker_dict = tracker_dict_2
-    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
-
 
     for group, interviewer_dict in tracker_dict.iteritems():
         group_dict = {}
@@ -367,9 +294,12 @@ def tracker(request):
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
                 for interview in grouped_interview_list:
-                    interview['date'] = interview['start_time'].date().strftime("%x")
-                    interview['start_time'] = interview['start_time'].strftime("%I:%M")
-                    interview['end_time'] = interview['end_time'].strftime("%I:%M")
+                    start_time = convert_times_to_pst(interview['start_time'])
+                    end_time = convert_times_to_pst(interview['end_time'])
+
+                    interview['date'] = start_time.date().strftime("%x")
+                    interview['start_time'] = start_time.strftime("%I:%M")
+                    interview['end_time'] = end_time.strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
@@ -400,6 +330,11 @@ def tracker(request):
                 context_instance=RequestContext(request)
             )
     )
+
+
+def convert_times_to_pst(dt):
+    return dt.astimezone(pytz.timezone('US/Pacific'))
+
 
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
