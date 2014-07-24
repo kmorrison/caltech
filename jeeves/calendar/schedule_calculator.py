@@ -30,7 +30,6 @@ class InterviewSlot(object):
         is_inside_time_preference=False,
         gets_buffer=False,
         number_of_interviews='n/a',
-        external_id=None,
         interviewer_name="",
     ):
         self.interviewer = interviewer
@@ -41,7 +40,6 @@ class InterviewSlot(object):
         self.is_inside_time_preference = is_inside_time_preference
         self.gets_buffer = gets_buffer
         self.number_of_interviews = number_of_interviews
-        self.external_id = external_id
 
     @property
     def display_time(self):
@@ -153,7 +151,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             print "exiting %s %s" % (num_attempts, len(created_interviews))
             break
 
-    return sorted(created_interviews, key=lambda x: (x.room.start_time, x.priority))
+    return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
 
 def get_all_rooms(time_period):
     all_rooms = models.Room.objects.all()
@@ -340,12 +338,10 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         if possible_rooms:
             # Choose a valid room randomly to avoid scheduling the same room always
             # because of arbitrary db ordering
-            random_room = random.choice(possible_rooms)
             room = InterviewSlot(
-                random_room.interviewer.display_name,
+                random.choice(possible_rooms).interviewer.display_name,
                 interview_duration.start_time,
-                interview_duration.end_time,
-                external_id=random_room.interviewer.external_id,
+                interview_duration.end_time
             )
             room_score = 100
 
