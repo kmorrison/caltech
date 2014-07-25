@@ -93,8 +93,10 @@ $(document).ready(function() {
   var blue = new Hex(0x99FFFF).range(new Hex(0x007AFF), 7, true);
   var purple = new Hex(0xF1EFFF).range(new Hex(0x5856D6), 7, true);
   var pink = new Hex(0xFFC6EE).range(new Hex(0xFF2D55), 7, true);
-  var grey = new Hex(0xEAEAEF).range(new Hex(0x8E8E93), 7, true);
+  var grey = new Hex(0xA1A1A1).range(new Hex(0x5C5C5C), 7, true);
   var magenta = new Hex(0xFFE6FF).range(new Hex(0xEF4DB6), 7, true);
+  var white = new Hex(0xFFFFFF).range(new Hex(0x7C7D7C), 7, true);
+  
 
   var color_gradient = {
       'red': red,
@@ -104,7 +106,8 @@ $(document).ready(function() {
       'purple': purple,
       'pink': pink,
       'grey': grey,
-      'magenta': magenta
+      'magenta': magenta,
+      'white': white
   };
 
   function IsNumeric(input)
@@ -114,9 +117,9 @@ $(document).ready(function() {
 
   $("table tr td").each(function (){
       var chosen_color = color_gradient[$(this).parent().parent().parent().attr('color_group')];
-      var opacity = 1;
+      var opacity = 0;
       if (IsNumeric($(this).attr('value')) == true){
-          opacity = parseInt($(this).attr('value')) + 1;
+          opacity = parseInt($(this).attr('value'));
       }
       $(this).css({
       'background-color' : '#'+chosen_color[opacity].toString()

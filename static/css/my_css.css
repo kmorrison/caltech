@@ -28,6 +28,11 @@
   overflow: hidden;
 }
 
+.tracker-top {
+  position: fixed;
+  z-index: 1000;
+}
+
 .tracker-container .week li {
   float: left;
   width: 30px;

@@ -252,12 +252,9 @@ def create_calendar_event_content(interviews):
 
     return list_of_interviewers
 
-def get_color_group_for_requisition(requisition):
-    colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
-    req_to_color = {}
-    for idx, req in enumerate(all_reqs()):
-      if str(req).lower() == requisition.lower():
-          return colors[idx%len(colors)]
+def get_color_group_for_requisition(index):
+    colors = ['white']
+    return colors[index%len(colors)]
 
 def tracker(request):
     if 'start_date' not in request.GET:
@@ -276,10 +273,11 @@ def tracker(request):
         end_date
     )
 
-    for group, interviewer_dict in tracker_dict.iteritems():
+    for index, item in enumerate(tracker_dict.iteritems()):
+        group, interviewer_dict = item
         group_dict = {}
         group_dict['interviewer'] = interviewer_dict
-        group_dict['color_group'] = get_color_group_for_requisition(group)
+        group_dict['color_group'] = get_color_group_for_requisition(index)
 
         for interviewer_name, interviews in group_dict['interviewer'].iteritems():
             num_interviews_for_interviewer = 0
