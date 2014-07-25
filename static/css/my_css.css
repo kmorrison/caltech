@@ -44,6 +44,8 @@
 
 .schedule-list {
   list-style-type: none;
+  margin-left:90px;
+  margin-top: 8px;
 }
 
 .schedule-item {
