@@ -4,6 +4,8 @@ import heapq
 import itertools
 import random
 import time
+import pytz
+
 
 from caltech import secret
 from jeeves import models
@@ -509,17 +511,27 @@ def get_interviews_with_all_interviewers(*args, **kwargs):
 
 def change_interviewer(interview_slot_id, interviewer_id):
     slot = models.InterviewSlot.objects.get(id=interview_slot_id)
-    slot.interviewer_id = interviewer_id
+    slot.interviewer_id = interviewer_id    
+    google_event_id = slot.interview.google_event_id
+    if google_event_id:
+        updated_description_list = []
+        for interview_slot in slot.interview.interviewslot_set.all():
+            start_time = interview_slot.start_time.astimezone(pytz.timezone('US/Pacific')).strftime("%I:%M")
+            updated_description_list.append('{time}: {name}'.format(time=start_time, name=interview_slot.interviewer.name))
+        updated_description = '\n'.join(updated_description_list)
+        calendar_response = calendar_client.update_event(google_event_id, updated_description)
+
     slot.save()
 
 
 def delete_interview(interview_id):
     interview = models.Interview.objects.get(id=interview_id)
-    google_event_id = interview.google_event_id
     for slot in interview.interviewslot_set.all():
         slot.delete()
     interview.delete()
-    calendar_response = calendar_client.delete_event(google_event_id)
+    google_event_id = interview.google_event_id
+    if google_event_id:
+        calendar_response = calendar_client.delete_event(google_event_id)
 
 
 def get_all_recruiters():
