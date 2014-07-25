@@ -180,12 +180,19 @@ def get_preferences(interviewers, time_period):
     return preferences
 
 
+def has_same_interviewer_twice(possible_order):
+    interviewer_ids = set([interviewer.interviewer.id for interviewer in possible_order])
+    return len(interviewer_ids) != len(possible_order)
+
+
 def generate_possible_orders_forever(interviewer_groups):
     """Given a grouping of interviews, generate possible schedules."""
     while True:
         possible_order = []
         for interviewer_group in interviewer_groups:
             possible_order.extend(random.sample(interviewer_group.interviewers, interviewer_group.num_required))
+        if has_same_interviewer_twice(possible_order):
+            continue
         yield possible_order
 
 

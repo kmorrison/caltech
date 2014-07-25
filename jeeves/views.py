@@ -76,12 +76,6 @@ def get_interviewers(requisition, also_include=None, dont_include=None, squash_g
 def get_interview_groups_with_requirements(template_requisitions, also_include=None, dont_include=None):
     interviewer_groups = rules.get_interview_group([(d['number_per_requisition'], d['requisition_id']) for d in template_requisitions])
 
-    # Reduce interviewer sets
-    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
-    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
-        for _, other_interviewers in interviewer_groups[i+1:]:
-            other_interviewers.difference_update(interviewers)
-
     interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
     return interviewer_groups
 
