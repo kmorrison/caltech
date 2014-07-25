@@ -1,3 +1,4 @@
+import logging
 import simplejson
 import pytz
 import time
@@ -14,7 +15,6 @@ from django import forms
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import render_to_response
-from django.shortcuts import redirect
 from django.template import RequestContext
 from django.http import HttpResponse
 
@@ -26,6 +26,16 @@ from jeeves.calendar.lib import TimePeriod
 
 from caltech import secret
 from caltech import settings
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename='log.log',
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
