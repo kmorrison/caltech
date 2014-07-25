@@ -2,8 +2,10 @@ import simplejson
 import pytz
 import time
 
+import datetime
 from datetime import date
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 from itertools import groupby
 import operator
@@ -373,6 +375,28 @@ def error_check_scheduler_form_post(form):
     else:
         return True, []
 
+def determine_break_from_interview_time(time_period, interview_type):
+    if interview_type == InterviewType.ON_SITE:
+        return None
+
+    start_of_break = time(12, 0)
+    end_of_break = time(13, 0)
+    weekday = time_period.start_time.weekday()
+    if weekday == 4:  # Friday
+        end_of_break = datetime.time(13, 30)
+
+    date = time_period.start_time.date()
+    start_of_break_dt = datetime.combine(date, start_of_break)
+    end_of_break_dt = datetime.combine(date, end_of_break)
+    break_time_period = TimePeriod(
+        start_of_break_dt,
+        end_of_break_dt,
+    )
+    if time_period.contains(break_time_period):
+        return break_time_period
+    return None
+
+
 def new_scheduler_post(request):
     form_data = request.POST
     candidate_name = form_data['candidate_name']
@@ -408,6 +432,11 @@ def new_scheduler_post(request):
         )
         for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
     ]
+
+    possible_break = determine_break_from_interview_time(
+        time_period,
+        interview_template.type,
+    )
 
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
