@@ -74,7 +74,7 @@ class Interview(models.Model):
         return "%s - %s" % (InterviewTypeChoice.mapping.get(self.type, ''), self.candidate_name)
 
     class Meta:
-        ordering = ('time_created',)
+        ordering = ('-time_created',)
 
 
 class TimeChoice(object):
