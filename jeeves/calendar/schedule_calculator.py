@@ -79,6 +79,19 @@ class Interview(object):
 InterviewerGroup = collections.namedtuple('InterviewerGroup', ('num_required', 'interviewers'))
 
 
+def load_number_of_alternate_events(interviewer_id, week_start, week_end):
+    alternative_events = models.AlternateRecruitingEvent.objects.filter(
+        interviewer_id=interviewer_id,
+    )
+    number_of_events_in_the_week = 0
+    for event in alternative_events:
+        week = event.time.date().isocalendar()[1]
+        if week_start == week:
+            number_of_events_in_the_week += 1
+
+    return number_of_events_in_the_week
+
+
 def _prune_interviewers_for_capacity(interviewers, time_period):
     week_start = time_period.start_time.date().isocalendar()[1]
     week_end = time_period.end_time.date().isocalendar()[1]
@@ -91,11 +104,17 @@ def _prune_interviewers_for_capacity(interviewers, time_period):
             week = interview_slot.start_time.date().isocalendar()[1]
             if week == week_start:
                 interviews += 1
+
         if interviewer.interviewer.real_max_interviews is None:
             raise ValueError("Max interviews cannot be None, call an engineer")
-
+        number_of_alternate_events = load_number_of_alternate_events(
+            interviewer.interviewer.id,
+            week_start,
+            week_end,
+        )
         if interviews < interviewer.interviewer.real_max_interviews:
-            pruned_interviewers[interviewer.interviewer.address] = (interviewer, interviews)
+            pruned_interviewers[interviewer.interviewer.address] = (interviewer, interviews + number_of_alternate_events)
+
     return pruned_interviewers
 
 def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewers):
@@ -109,7 +128,13 @@ def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewer
         pruned_interviewer_groups.append(InterviewerGroup(num_required=interviewer_group.num_required, interviewers=igroup_interviewers))
     return pruned_interviewer_groups
 
-def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
+def calculate_schedules(
+    interviewer_groups,
+    time_period,
+    possible_break=None,
+    max_schedules=100,
+    interview_type=None
+):
     """Exposed method for calculating new interviews.
 
     Returns:
@@ -141,6 +166,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             rooms,
             preferences,
             interviewer_to_num_interviews_map,
+            interview_type=interview_type
         )
 
         # Add the schedule if it meets our validity heuristics
@@ -175,12 +201,19 @@ def get_preferences(interviewers, time_period):
     return preferences
 
 
+def has_same_interviewer_twice(possible_order):
+    interviewer_ids = set([interviewer.interviewer.id for interviewer in possible_order])
+    return len(interviewer_ids) != len(possible_order)
+
+
 def generate_possible_orders_forever(interviewer_groups):
     """Given a grouping of interviews, generate possible schedules."""
     while True:
         possible_order = []
         for interviewer_group in interviewer_groups:
             possible_order.extend(random.sample(interviewer_group.interviewers, interviewer_group.num_required))
+        if has_same_interviewer_twice(possible_order):
+            continue
         yield possible_order
 
 
@@ -326,7 +359,7 @@ def _preference_score(interviewer_slot, preferences_calendar):
     return 0
 
 
-def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map):
+def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map, interview_type=None):
     if possible_schedule is None:
         return None
 
@@ -351,6 +384,11 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
             )
             room_score = 100
 
+            if interview_type == models.InterviewType.ON_SITE:
+                if not random_room.interviewer.is_suitable_for_onsite:
+                    room_score -= 20
+
+
     preference_scores = calculate_preference_scores(possible_schedule, preferences)
     preference_score = sum(preference_scores)
     for interview_slot, score in zip(possible_schedule, preference_scores):
@@ -371,7 +409,6 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         interview_slot.number_of_interviews = num_interviews
 
 
-    # TODO: Calculate priority based on interview padding
     return Interview(
         interview_slots=possible_schedule,
         room=room,

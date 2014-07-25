@@ -6,7 +6,7 @@
 .ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; color: #7F7F7F; background: white;}
 .ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; background: white; border: none; border-bottom: dashed 1px #CCC;}
 .ui-datepicker {position: relative; left:100px; top:150px;}
-.ui-datepicker thead {color: #F15B46;}
+.ui-datepicker thead {color: #c41200;}
 
 html, body{
 	color: #7F7F7F;
@@ -21,35 +21,36 @@ body {
 }
 
 #header-container {
-	height: 8em;
-	background: #7F7F7F;
+	background: #c41200;
 	padding: 10px;
 	margin: -10px;
+	position: fixed;
+	width: 100%;
+	z-index: 1000;
 	-webkit-box-shadow:0 5px 10px #aaa;
 	-moz-box-shadow:0 5px 10px #aaa;
 	box-shadow:0 5px 10px #aaa;
-	border-bottom: 1em solid #39E2DC;
 }
 
 #header-container a {
 	text-decoration:none;
 	color: white;
+	overflow: hidden;
 }
 
-#title{ color:white; font:'Lobster1.1Regular', Arial, sans-serif; }
+#title{ color:white; font:'Lobster1.1Regular', Arial, sans-serif; float:left }
 
 .wrapper {
 	margin:0 auto;
 	width:90%;
 }
-
+nav {float: right;}
 nav ul, nav ol { list-style: none; list-style-image: none; margin: 0; padding: 0;}
 
 nav li:first-child a{ margin-left:0; }
 nav li:last-child a{ margin-right:0; }
 
 #admin a {
-	background: white;
 	color: #7F7F7F;
 }
 
@@ -271,7 +272,7 @@ form { margin: 0; }
 fieldset { border: 0; margin: 0; padding: 0; }
 label { cursor: pointer; }
 legend { border: 0; *margin-left: -7px; padding: 0; white-space: normal; }
-button, input, select, textarea { font-size: 100%; margin: 0; vertical-align: baseline; *vertical-align: middle; }
+button, input, select, textarea { font-size: 100%; margin: 1; vertical-align: baseline; *vertical-align: middle; }
 button, input { line-height: normal; }
 button, input[type="button"], input[type="reset"], input[type="submit"] { cursor: pointer; -webkit-appearance: button; *overflow: visible; }
 button[disabled], input[disabled] { cursor: default; }
@@ -317,16 +318,14 @@ td { vertical-align: top; }
    ============== */
 
 nav a{
-	height: 19%;
 	display:block;
 	margin-bottom: 5px;
 	padding: 2px 0 0 0 ;
-	background: #39E2DC;
 	color: white;
 	text-align:center;
 	text-decoration:none;
-	font-weight:bold;
-	font-size: 14;
+	font-weight:500;
+	font-size: 18;
 }
 
 /* ==============
@@ -382,8 +381,6 @@ nav a{
 	
 	nav a{
 		float: left;
-		width: 19%;
-		height: 20%;
 		margin: 4% 1%;
 		padding: 10px 2%;
 		margin-bottom:0;
@@ -421,10 +418,8 @@ nav a{
 	
 	nav a{
 		float:left;
-		width: 19%;
-		height: 20%;
 		margin: 4% 1%;
-		padding: 10px 2%;
+		padding: 10px;
 		margin-bottom:0;
 		text-decoration: none;
 	}
@@ -437,10 +432,6 @@ nav a{
 		margin: 2% 0 0 0;
 	}
 	
-	nav {
-		float:left;
-		width: 70%;
-	}
 
 /* ============
     WIDE: Main
@@ -449,10 +440,11 @@ nav a{
 	#main article{
 		float:left;
 		width: 95%;
-		background: white;
+		background: #e5e5e1;
 		padding: 1em;
 		-moz-border-radius: 15px;
 		border-radius: 15px;
+		margin-top: 60px;
 }		
 	
 
@@ -587,19 +579,15 @@ ul{
 }
 
 .hovercard {
-    color: #FFF;
     clear: both;
     float: none;
     width: 250px;
-    background: #000;
+    background: #e5e5e1;
     padding: 10px;
     font: 12px Arial, Helvetica, sans-serif;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-    -webkit-border-radius: 5px;
     position: absolute;
     top: 15px;
-    border: 2px solid #999;
+    border: 1px solid #999;
     display: none;
     z-index: 3;
     text-align: left;
@@ -614,23 +602,9 @@ ul{
 }
 
 .hovercard-submit {
-  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #4197ee) );
-  background:-moz-linear-gradient( center top, #79bbff 5%, #4197ee 100% );
-  background-color:#79bbff;
-  -webkit-border-top-left-radius:31px;
-  -moz-border-radius-topleft:31px;
-  border-top-left-radius:31px;
-  -webkit-border-top-right-radius:31px;
-  -moz-border-radius-topright:31px;
-  border-top-right-radius:31px;
-  -webkit-border-bottom-right-radius:31px;
-  -moz-border-radius-bottomright:31px;
-  border-bottom-right-radius:31px;
-  -webkit-border-bottom-left-radius:31px;
-  -moz-border-radius-bottomleft:31px;
-  border-bottom-left-radius:31px;
+  background-color:#3b65a7;
   text-indent:0px;
-  border:1px solid #469df5;
+  border:1px solid #3b65a7;
   display:inline-block;
   color:#ffffff;
   font-size:11px;
@@ -642,23 +616,9 @@ ul{
 }
 
 .hovercard-delete {
-  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffc477), color-stop(1, #fb9e25) );
-  background:-moz-linear-gradient( center top, #ffc477 5%, #fb9e25 100% );
-  background-color:#ffc477;
-  -webkit-border-top-left-radius:31px;
-  -moz-border-radius-topleft:31px;
-  border-top-left-radius:31px;
-  -webkit-border-top-right-radius:31px;
-  -moz-border-radius-topright:31px;
-  border-top-right-radius:31px;
-  -webkit-border-bottom-right-radius:31px;
-  -moz-border-radius-bottomright:31px;
-  border-bottom-right-radius:31px;
-  -webkit-border-bottom-left-radius:31px;
-  -moz-border-radius-bottomleft:31px;
-  border-bottom-left-radius:31px;
+  background-color:#c41200;
   text-indent:0px;
-  border:1px solid #eeb44f;
+  border:1px solid #c41200;
   display:inline-block;
   color:#ffffff;
   font-family:Arial;
@@ -672,6 +632,6 @@ ul{
 
 .interviewer_id {
   width: 150px;
-  font-size: 12px;
+  font-size: 11px;
   text-color: #7F7F7F;
 }
