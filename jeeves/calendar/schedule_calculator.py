@@ -107,7 +107,13 @@ def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewer
         pruned_interviewer_groups.append(InterviewerGroup(num_required=interviewer_group.num_required, interviewers=igroup_interviewers))
     return pruned_interviewer_groups
 
-def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
+def calculate_schedules(
+    interviewer_groups,
+    time_period,
+    possible_break=None,
+    max_schedules=100,
+    interview_type=None
+):
     """Exposed method for calculating new interviews.
 
     Returns:
@@ -139,6 +145,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             rooms,
             preferences,
             interviewer_to_num_interviews_map,
+            interview_type=interview_type
         )
 
         # Add the schedule if it meets our validity heuristics
@@ -324,7 +331,7 @@ def _preference_score(interviewer_slot, preferences_calendar):
     return 0
 
 
-def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map):
+def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map, interview_type=None):
     if possible_schedule is None:
         return None
 
@@ -348,6 +355,11 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
                 external_id=random_room.interviewer.external_id,
             )
             room_score = 100
+
+            if interview_type == models.InterviewType.ON_SITE:
+                if not random_room.interviewer.is_suitable_for_onsite:
+                    room_score -= 20
+
 
     preference_scores = calculate_preference_scores(possible_schedule, preferences)
     preference_score = sum(preference_scores)

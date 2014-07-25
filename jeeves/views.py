@@ -507,6 +507,7 @@ def new_scheduler_post(request):
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
+            interview_type=interview_type
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
