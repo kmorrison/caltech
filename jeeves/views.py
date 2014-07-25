@@ -12,6 +12,7 @@ from itertools import groupby
 import operator
 
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import render_to_response
@@ -134,6 +135,7 @@ def index(request):
     # TODO: Should this go in static?
     return render_to_response('index.html', {})
 
+@login_required
 def find_times(request):
     context = dict(
             find_times_form=FindTimesForm(),
@@ -183,7 +185,7 @@ def interview_post(request):
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
-    recruiter_id = interview_form.pop('recruiter_id')
+    recruiter_id = interview_form.pop('recruiter_id')[0]
     candidate_name = interview_form.pop('candidate_name')
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
@@ -223,7 +225,13 @@ def interview_post(request):
         interview_form['room'][0],
     )
 
-    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+    schedule_calculator.persist_interview(
+        interviews,
+        interview_type,
+        google_event_id=calendar_response['id'],
+        recruiter_id=recruiter_id,
+        user_id=request.user.id,
+    )
 
 
     return redirect('/new_scheduler?success=1')
@@ -243,6 +251,7 @@ def get_color_group_for_requisition(requisition):
       if str(req).lower() == requisition.lower():
           return colors[idx%len(colors)]
 
+@login_required
 def tracker(request):
     if 'start_date' not in request.GET:
         today = date.today()
@@ -314,6 +323,7 @@ def convert_times_to_pst(dt):
     return dt.astimezone(pytz.timezone('US/Pacific'))
 
 
+@login_required
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
     context = dict(
