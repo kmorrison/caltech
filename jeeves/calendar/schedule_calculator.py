@@ -116,6 +116,13 @@ def _prune_interviewers_for_capacity(interviewers, time_period):
 
     return pruned_interviewers
 
+
+def _prune_interviewers_for_onsite_ability(interviewers, interview_type):
+    if interview_type == models.InterviewType.ON_SITE:
+        return [interviewer for interviewer in interviewers if interviewer.interviewer.can_do_onsites]
+    return interviewers
+
+
 def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewers):
     interviewer_set = set([interviewer.interviewer.address for interviewer in interviewers])
     pruned_interviewer_groups = []
@@ -145,6 +152,7 @@ def calculate_schedules(
     interviewers = list(itertools.chain.from_iterable(
         interviewer_group.interviewers for interviewer_group in interviewer_groups
     ))
+    interviewers = _prune_interviewers_for_onsite_ability(interviewers, interview_type)
     interviewer_to_num_interviews_map = _prune_interviewers_for_capacity(interviewers, time_period)
     if not interviewer_to_num_interviews_map:
         raise NoInterviewersAvailableError
