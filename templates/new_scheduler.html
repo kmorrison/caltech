@@ -24,22 +24,12 @@
     <input type="text" name="candidate_name" class="candidate-name">
   </div>
 
-  <div class="form-sec type">
-    <h3>Interview Type</h3>
-    <select name='interview_type' data-placeholder=" " multiple class="chosen-select">
+  <div class="form-sec template">
+    <h3>Interview Template</h3>
+    <select name='interview_template' data-placeholder=" " multiple class="chosen-select">
       <option></option>
-      {% for itype in itypes %}
-        <option value="{{ itype.interview_type }}">{{ itype.display_string }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="form-sec req">
-    <h3>Requisition</h3>
-    <select name='requisition' data-placeholder=" " multiple class="chosen-select">
-      <option></option>
-      {% for req in reqs %}
-        <option value="{{ req }}">{{ req }}</option>
+      {% for template in interview_templates %}
+        <option value="{{ template.id }}">{{ template }}</option>
       {% endfor %}
     </select>
   </div>

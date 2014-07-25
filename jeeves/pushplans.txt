@@ -1,2 +1,29 @@
 ALTER TABLE jeeves_interviewer ADD COLUMN "preferences_address" varchar(256);
 ALTER TABLE jeeves_interview ADD COLUMN "google_event_id" varchar(256) default '';
+CREATE TABLE "jeeves_interviewtemplate" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "type" integer NOT NULL,
+    "template_name" varchar(256) NOT NULL
+);
+CREATE TABLE "jeeves_interviewtemplaterequisition" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "requisition_id" integer NOT NULL REFERENCES "jeeves_requisition" ("id"),
+    "interview_template_id" integer NOT NULL REFERENCES "jeeves_interviewtemplate" ("id"),
+    "number_per_requisition" integer NOT NULL
+);
+CREATE INDEX "jeeves_interviewtemplaterequisition_a811a29d" ON "jeeves_interviewtemplaterequisition" ("requisition_id");
+CREATE INDEX "jeeves_interviewtemplaterequisition_54dc7160" ON "jeeves_interviewtemplaterequisition" ("interview_template_id");
+CREATE TABLE "jeeves_alternaterecruitingevent" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "interviewer_id" integer NOT NULL REFERENCES "jeeves_interviewer" ("id"),
+    "type" integer NOT NULL,
+    "time" datetime NOT NULL
+);
+CREATE INDEX "jeeves_alternaterecruitingevent_2a084a8b" ON "jeeves_alternaterecruitingevent" ("interviewer_id");
+ALTER TABLE jeeves_interviewer ADD COLUMN "can_do_onsites" integer NOT NULL default 1;
+
+ALTER TABLE jeeves_interview ADD COLUMN "user_id" integer REFERENCES "auth_user" ("id");
+CREATE INDEX "jeeves_interview_fbfc09f1" ON "jeeves_interview" ("user_id");
+
+ALTER TABLE jeeves_interview ADD COLUMN "time_created" datetime;
+CREATE INDEX "jeeves_interview_time_created_idx" ON "jeeves_interview" ("time_created");

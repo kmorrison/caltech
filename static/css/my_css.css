@@ -44,36 +44,31 @@
 
 .schedule-list {
   list-style-type: none;
+  margin-left:90px;
+  margin-top: 8px;
 }
 
 .schedule-item {
   list-style-type: none;
   width: 400px;
-  height: 180px;
+  height: 160px;
   border: 1px solid #999;
-  background: #eceddf;
+  background: #EEE;
   padding: 10px;
   position: relative;
 }
 
 .schedule-item h4 {
-  color: #45760d;
-  font-weight: bold;
-  font-size: 18px;
-  font-family: Georgia;
+  font-size: 19px;
   margin-bottom: 5px;
+  color: #c41200;
 }
 
 .schedule-item .slots {
-  color: #639ba3; 
+ 
 }
 
 .schedule-item .chosen-container {
   width: 150px !important;
 }
 
-.schedule-item .cta {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-}

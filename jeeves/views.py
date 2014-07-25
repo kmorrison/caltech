@@ -1,18 +1,21 @@
+import logging
 import simplejson
 import pytz
 import time
 
+import datetime
 from datetime import date
 from datetime import datetime
+from datetime import time as dt_time
 from datetime import timedelta
 from itertools import groupby
 import operator
 
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import render_to_response
-from django.shortcuts import redirect
 from django.template import RequestContext
 from django.http import HttpResponse
 
@@ -24,6 +27,16 @@ from jeeves.calendar.lib import TimePeriod
 
 from caltech import secret
 from caltech import settings
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename='log.log',
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -52,7 +65,13 @@ def all_interview_types():
     return [
       models.InterviewTypeChoice(models.InterviewType.ON_SITE),
       models.InterviewTypeChoice(models.InterviewType.SKYPE),
+      models.InterviewTypeChoice(models.InterviewType.SKYPE_ON_SITE),
     ]
+
+
+def all_interview_templates():
+    return models.InterviewTemplate.objects.all()
+
 
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
@@ -67,47 +86,8 @@ def get_interviewers(requisition, also_include=None, dont_include=None, squash_g
 
     return required_interviewers, interviewers - required_interviewers
 
-def get_interviewer_groups(formset, also_include=None, dont_include=None):
-    """Extract interviewers requirements from the form and turn them into InterviewerGroups.
-    XXX: This is pretty hacky right now as we transition to formsets on the form
-    """
-    # TODO: Collapse querys into single, nonlooping query
-    requisitions = [form.cleaned_data['requisition'] for form in formset if form.cleaned_data]
-    requisitions = [models.Requisition.objects.get(id=req.id) for req in requisitions]
-    interviewers_by_requisition = [set(requisition.interviewers.all()) for requisition in requisitions]
-    interviewer_groups = []
-    if dont_include:
-        dont_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewers_by_requisition = [interviewers_by_req - dont_interviewers for interviewers_by_req in interviewers_by_requisition]
-
-    if also_include:
-        must_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewer_groups.append((len(must_interviewers), must_interviewers))
-
-    interviewer_groups += [(
-        form.cleaned_data['num_required'],
-        interviewers,
-        ) for interviewers, form in zip(interviewers_by_requisition, formset)
-    ]
-
-    # Reduce interviewer sets
-    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
-    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
-        for _, other_interviewers in interviewer_groups[i+1:]:
-            other_interviewers.difference_update(interviewers)
-
-    interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
-    return interviewer_groups
-
-def get_interview_groups_with_requirements(requisition, interview_type, also_include=None, dont_include=None):
-    requirements = rules.get_interview_requirements(requisition, interview_type)
-    interviewer_groups = rules.get_interview_group(requirements)
-
-    # Reduce interviewer sets
-    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
-    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
-        for _, other_interviewers in interviewer_groups[i+1:]:
-            other_interviewers.difference_update(interviewers)
+def get_interview_groups_with_requirements(template_requisitions, also_include=None, dont_include=None):
+    interviewer_groups = rules.get_interview_group([(d['number_per_requisition'], d['requisition_id']) for d in template_requisitions])
 
     interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
     return interviewer_groups
@@ -151,38 +131,11 @@ class RequisitionScheduleForm(forms.Form):
 RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
 
 
-class SuggestScheduleForm(forms.Form):
-    start_time = forms.DateTimeField(label='Availability Start Time')
-    end_time = forms.DateTimeField(label='Availability End Time')
-
-    also_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-    )
-    dont_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-            label="Don't Include",
-    )
-
-    break_start_time = forms.DateTimeField(required=False, label='Break Start Time (optional)')
-    break_end_time = forms.DateTimeField(required=False, label='Break End Time (optional)')
-
-    @property
-    def time_period(self):
-        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
-
-    @property
-    def possible_break(self):
-        if self.cleaned_data['break_start_time'] is None or  self.cleaned_data['break_end_time'] is None:
-            return None
-        return TimePeriod(self.cleaned_data['break_start_time'], self.cleaned_data['break_end_time'])
-
-
 def index(request):
     # TODO: Should this go in static?
     return render_to_response('index.html', {})
 
+@login_required
 def find_times(request):
     context = dict(
             find_times_form=FindTimesForm(),
@@ -228,23 +181,11 @@ def find_times_post(request):
     )
 
 
-def scheduler(request):
-    context = dict(
-        requisition_formset=RequisitionScheduleFormset(
-            initial=[dict(
-                num_required=2,
-                requisition=getattr(secret, 'preferred_requisition_id', None) or 1,
-            )]
-        ),
-        scheduler_form=SuggestScheduleForm(),
-    )
-    return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
-
 def interview_post(request):
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
-    recruiter_id = interview_form.pop('recruiter_id')
+    recruiter_id = interview_form.pop('recruiter_id')[0]
     candidate_name = interview_form.pop('candidate_name')
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
@@ -284,7 +225,13 @@ def interview_post(request):
         interview_form['room'][0],
     )
 
-    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+    schedule_calculator.persist_interview(
+        interviews,
+        interview_type,
+        google_event_id=calendar_response['id'],
+        recruiter_id=recruiter_id,
+        user_id=request.user.id,
+    )
 
 
     return redirect('/new_scheduler?success=1')
@@ -304,6 +251,7 @@ def get_color_group_for_requisition(requisition):
       if str(req).lower() == requisition.lower():
           return colors[idx%len(colors)]
 
+@login_required
 def tracker(request):
     if 'start_date' not in request.GET:
         today = date.today()
@@ -339,13 +287,28 @@ def tracker(request):
                     interview['date'] = start_time.date().strftime("%x")
                     interview['start_time'] = start_time.strftime("%I:%M")
                     interview['end_time'] = end_time.strftime("%I:%M")
-                interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
+                interviews_dict_by_day_of_week[day_of_week] = {
+                    'num_interviews': len(grouped_interview_list) + day_of_week_to_number_of_interviewers.get(day_of_week, 0),
+                    'interviews': grouped_interview_list
+                }
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
                 'interviews': interviews_dict_by_day_of_week,
                 'num_interviews': num_interviews_for_interviewer,
             }
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
+            day_of_week_to_number_of_interviewers, total_number_of_interviews_for_week = \
+                get_number_of_alternate_events_for_interviewer(
+                    interviewer_name,
+                    last_week_start,
+                    next_week_start,
+                )
+            update_group_dict_with_alternate_recruiting_events(
+                group_dict,
+                interviewer_name,
+                last_week_start,
+                next_week_start
+            )
         tracker_dict[group] = group_dict
 
     date_format = "%m/%d"
@@ -371,18 +334,70 @@ def tracker(request):
     )
 
 
+def update_group_dict_with_alternate_recruiting_events(
+    group_dict,
+    interviewer_name,
+    last_week_start,
+    next_week_start
+):
+    if interviewer_name not in group_dict['interviewer']:
+        return
+    interview_info_dict = group_dict['interviewer'][interviewer_name]
+    day_of_week_to_number_of_arc, total_number_of_arc_for_week = \
+        get_number_of_alternate_events_for_interviewer(
+            interviewer_name,
+            last_week_start,
+            next_week_start,
+        )
+
+    interview_info_dict['num_interviews'] += total_number_of_arc_for_week
+
+    for day_of_week, number_of_arc in day_of_week_to_number_of_arc.iteritems():
+        if day_of_week not in interview_info_dict['interviews']:
+            interview_info_dict['interviews'][day_of_week] = {
+                'num_interviews': 0,
+                'interviews': [],
+            }
+        interview_info_dict['interviews'][day_of_week]['num_interviews'] += \
+            number_of_arc
+
+
+def get_number_of_alternate_events_for_interviewer(
+    interviewer_name,
+    start_date,
+    end_date
+):
+    events = models.AlternateRecruitingEvent.objects.filter(
+        time__gte=start_date,
+        time__lte=end_date,
+        interviewer__display_name=interviewer_name,
+    )
+    day_of_week_to_number_of_arc = {}
+    total_number_of_arc_for_week = 0
+    for event in events:
+        weekday = event.time.weekday()
+        if weekday not in day_of_week_to_number_of_arc:
+            day_of_week_to_number_of_arc[weekday] = 0
+        day_of_week_to_number_of_arc[weekday] += 1
+        total_number_of_arc_for_week += 1
+
+    return day_of_week_to_number_of_arc, total_number_of_arc_for_week
+
+
 def convert_times_to_pst(dt):
     return dt.astimezone(pytz.timezone('US/Pacific'))
 
 
+@login_required
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
     context = dict(
       itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times(),
+      interview_templates=all_interview_templates(),
       success=success,
-      recruiters=schedule_calculator.get_all_recruiters()
+      recruiters=schedule_calculator.get_all_recruiters(),
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
@@ -394,63 +409,8 @@ def modify_interview(request):
     elif form_data['hovercard-submit'] == 'Remove':
         if form_data['interview_id']:
             schedule_calculator.delete_interview(form_data['interview_id'])
-            
+
     return redirect('/tracker/')
-
-def scheduler_post(request):
-    requisition_formset = RequisitionScheduleFormset(request.POST)
-    scheduler_form = SuggestScheduleForm(request.POST)
-    valid_submission = scheduler_form.is_valid() and requisition_formset.is_valid()
-    schedules = []
-    if not valid_submission:
-        return render(
-                request,
-                'scheduler.html',
-                dict(
-                    requisition_formset=requisition_formset,
-                    scheduler_form=scheduler_form,
-                    valid_submission=valid_submission,
-                    schedules=schedules,
-                )
-        )
-
-    interviewer_groups = get_interviewer_groups(
-            requisition_formset,
-            also_include=scheduler_form.cleaned_data['also_include'],
-            dont_include=scheduler_form.cleaned_data['dont_include'],
-    )
-
-    calendar_responses = [
-        calendar_client.get_calendars(
-            interviewer_group.interviewers,
-            scheduler_form.time_period)
-        for interviewer_group in interviewer_groups
-        if interviewer_group.num_required
-    ]
-
-    interviewer_groups_with_calendars = [
-        schedule_calculator.InterviewerGroup(
-            interviewers=calendar_response.interview_calendars,
-            num_required=interviewer_group.num_required,
-        )
-        for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
-    ]
-
-    schedules = schedule_calculator.calculate_schedules(
-            interviewer_groups_with_calendars,
-            time_period=scheduler_form.time_period,
-            possible_break=scheduler_form.possible_break,
-    )
-    return render(
-            request,
-            'scheduler.html',
-            dict(
-                requisition_formset=requisition_formset,
-                scheduler_form=scheduler_form,
-                valid_submission=valid_submission,
-                schedules=schedules,
-            )
-    )
 
 def get_time_period(start_time, end_time, date):
     def convert_form_datetime_to_sql_datetime(date, time):
@@ -472,23 +432,49 @@ def error_check_scheduler_form_post(form):
     else:
         return True, []
 
+def determine_break_from_interview_time(time_period, interview_type):
+    if interview_type != models.InterviewType.ON_SITE:
+        return None
 
-def get_interviewer_set(interviewer_type, requisition):
-    return []
+    tz_info = time_period.start_time.tzinfo
+    start_of_break = dt_time(12, 0, tzinfo=tz_info)
+    end_of_break = dt_time(13, 0, tzinfo=tz_info)
+    weekday = time_period.start_time.weekday()
+    if weekday == 4:  # Friday
+        end_of_break = dt_time(13, 30, tzinfo=tz_info)
+
+    date = time_period.start_time.date()
+    start_of_break_dt = datetime.combine(date, start_of_break)
+    end_of_break_dt = datetime.combine(date, end_of_break)
+    break_time_period = TimePeriod(
+        start_of_break_dt,
+        end_of_break_dt,
+    )
+    if time_period.contains(break_time_period):
+        print "Adding break %s" % break_time_period
+        return break_time_period
+    return None
+
 
 def new_scheduler_post(request):
     form_data = request.POST
-    interview_type = int(form_data['interview_type'])
     candidate_name = form_data['candidate_name']
+    interview_template_id = int(form_data['interview_template'])
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
 
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    requisition = models.Requisition.objects.get(name=form_data['requisition'])
-    interviewer_groups = get_interview_groups_with_requirements(requisition, interview_type)
-    time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
+    interview_template = models.InterviewTemplate.objects.get(id=interview_template_id)
+    interviewer_groups = get_interview_groups_with_requirements(
+        interview_template.interviewtemplaterequisition_set.values()
+    )
+    time_period = get_time_period(
+        form_data['start_time'],
+        form_data['end_time'],
+        form_data['date'],
+    )
 
     calendar_responses = [
         calendar_client.get_calendars(
@@ -506,9 +492,16 @@ def new_scheduler_post(request):
         for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
     ]
 
+    possible_break = determine_break_from_interview_time(
+        time_period,
+        interview_template.type,
+    )
+
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
+            interview_type=interview_template.type,
+            possible_break=possible_break,
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
@@ -516,7 +509,7 @@ def new_scheduler_post(request):
     scheduler_post_result = {
         'form_is_valid': form_is_valid,
         'data': _dump_schedules_into_json(schedules),
-        'interview_type': interview_type,
+        'interview_type': interview_template.type,
         'candidate_name': candidate_name
     }
 
