@@ -23,4 +23,7 @@ urlpatterns = patterns('',
     url(r'^find_times_post/', 'jeeves.views.find_times_post'),
     url(r'^tracker/', 'jeeves.views.tracker'),
     url(r'^modify_interview/', 'jeeves.views.modify_interview'),
+
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
+    url(r'^login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
 )

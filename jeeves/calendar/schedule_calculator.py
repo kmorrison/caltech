@@ -1,3 +1,4 @@
+import datetime
 from datetime import timedelta
 import collections
 import heapq
@@ -455,17 +456,20 @@ def filter_free_times_for_length(free_times):
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
 
 
-def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id=''):
+def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id='', user_id=None):
     interview_info = interview_infos[0]
     room_id = interview_info['room_id']
     candidate_name = interview_info['candidate_name']
 
+    now = datetime.datetime.now()
     interview = models.Interview.objects.create(
         candidate_name=candidate_name,
         room_id=room_id,
         recruiter_id=recruiter_id,
         type=interview_type,
-        google_event_id=google_event_id
+        google_event_id=google_event_id,
+        user_id=user_id,
+        time_created=now,
     )
 
     for interview_info in interview_infos:
