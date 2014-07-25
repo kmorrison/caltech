@@ -272,7 +272,7 @@ form { margin: 0; }
 fieldset { border: 0; margin: 0; padding: 0; }
 label { cursor: pointer; }
 legend { border: 0; *margin-left: -7px; padding: 0; white-space: normal; }
-button, input, select, textarea { font-size: 100%; margin: 0; vertical-align: baseline; *vertical-align: middle; }
+button, input, select, textarea { font-size: 100%; margin: 1; vertical-align: baseline; *vertical-align: middle; }
 button, input { line-height: normal; }
 button, input[type="button"], input[type="reset"], input[type="submit"] { cursor: pointer; -webkit-appearance: button; *overflow: visible; }
 button[disabled], input[disabled] { cursor: default; }
@@ -324,8 +324,8 @@ nav a{
 	color: white;
 	text-align:center;
 	text-decoration:none;
-	font-weight:bold;
-	font-size: 14;
+	font-weight:500;
+	font-size: 18;
 }
 
 /* ==============
@@ -579,19 +579,15 @@ ul{
 }
 
 .hovercard {
-    color: #FFF;
     clear: both;
     float: none;
     width: 250px;
-    background: #000;
+    background: #e5e5e1;
     padding: 10px;
     font: 12px Arial, Helvetica, sans-serif;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-    -webkit-border-radius: 5px;
     position: absolute;
     top: 15px;
-    border: 2px solid #999;
+    border: 1px solid #999;
     display: none;
     z-index: 3;
     text-align: left;
@@ -606,23 +602,9 @@ ul{
 }
 
 .hovercard-submit {
-  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #79bbff), color-stop(1, #4197ee) );
-  background:-moz-linear-gradient( center top, #79bbff 5%, #4197ee 100% );
-  background-color:#79bbff;
-  -webkit-border-top-left-radius:31px;
-  -moz-border-radius-topleft:31px;
-  border-top-left-radius:31px;
-  -webkit-border-top-right-radius:31px;
-  -moz-border-radius-topright:31px;
-  border-top-right-radius:31px;
-  -webkit-border-bottom-right-radius:31px;
-  -moz-border-radius-bottomright:31px;
-  border-bottom-right-radius:31px;
-  -webkit-border-bottom-left-radius:31px;
-  -moz-border-radius-bottomleft:31px;
-  border-bottom-left-radius:31px;
+  background-color:#3b65a7;
   text-indent:0px;
-  border:1px solid #469df5;
+  border:1px solid #3b65a7;
   display:inline-block;
   color:#ffffff;
   font-size:11px;
@@ -634,23 +616,9 @@ ul{
 }
 
 .hovercard-delete {
-  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffc477), color-stop(1, #fb9e25) );
-  background:-moz-linear-gradient( center top, #ffc477 5%, #fb9e25 100% );
-  background-color:#ffc477;
-  -webkit-border-top-left-radius:31px;
-  -moz-border-radius-topleft:31px;
-  border-top-left-radius:31px;
-  -webkit-border-top-right-radius:31px;
-  -moz-border-radius-topright:31px;
-  border-top-right-radius:31px;
-  -webkit-border-bottom-right-radius:31px;
-  -moz-border-radius-bottomright:31px;
-  border-bottom-right-radius:31px;
-  -webkit-border-bottom-left-radius:31px;
-  -moz-border-radius-bottomleft:31px;
-  border-bottom-left-radius:31px;
+  background-color:#c41200;
   text-indent:0px;
-  border:1px solid #eeb44f;
+  border:1px solid #c41200;
   display:inline-block;
   color:#ffffff;
   font-family:Arial;
@@ -664,6 +632,6 @@ ul{
 
 .interviewer_id {
   width: 150px;
-  font-size: 12px;
+  font-size: 11px;
   text-color: #7F7F7F;
 }
