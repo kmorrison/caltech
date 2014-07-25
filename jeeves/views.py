@@ -6,7 +6,7 @@ import time
 import datetime
 from datetime import date
 from datetime import datetime
-from datetime import time
+from datetime import time as dt_time
 from datetime import timedelta
 from itertools import groupby
 import operator
@@ -128,34 +128,6 @@ class RequisitionScheduleForm(forms.Form):
     num_required = forms.TypedChoiceField([(i, i) for i in xrange(1, 10)], coerce=int, initial=1)
 
 RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
-
-
-class SuggestScheduleForm(forms.Form):
-    start_time = forms.DateTimeField(label='Availability Start Time')
-    end_time = forms.DateTimeField(label='Availability End Time')
-
-    also_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-    )
-    dont_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-            label="Don't Include",
-    )
-
-    break_start_time = forms.DateTimeField(required=False, label='Break Start Time (optional)')
-    break_end_time = forms.DateTimeField(required=False, label='Break End Time (optional)')
-
-    @property
-    def time_period(self):
-        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
-
-    @property
-    def possible_break(self):
-        if self.cleaned_data['break_start_time'] is None or  self.cleaned_data['break_end_time'] is None:
-            return None
-        return TimePeriod(self.cleaned_data['break_start_time'], self.cleaned_data['break_end_time'])
 
 
 def index(request):
@@ -386,14 +358,15 @@ def error_check_scheduler_form_post(form):
         return True, []
 
 def determine_break_from_interview_time(time_period, interview_type):
-    if interview_type == InterviewType.ON_SITE:
+    if interview_type != models.InterviewType.ON_SITE:
         return None
 
-    start_of_break = time(12, 0)
-    end_of_break = time(13, 0)
+    tz_info = time_period.start_time.tzinfo
+    start_of_break = dt_time(12, 0, tzinfo=tz_info)
+    end_of_break = dt_time(13, 0, tzinfo=tz_info)
     weekday = time_period.start_time.weekday()
     if weekday == 4:  # Friday
-        end_of_break = datetime.time(13, 30)
+        end_of_break = dt_time(13, 30, tzinfo=tz_info)
 
     date = time_period.start_time.date()
     start_of_break_dt = datetime.combine(date, start_of_break)
@@ -403,6 +376,7 @@ def determine_break_from_interview_time(time_period, interview_type):
         end_of_break_dt,
     )
     if time_period.contains(break_time_period):
+        print "Adding break %s" % break_time_period
         return break_time_period
     return None
 
@@ -452,6 +426,7 @@ def new_scheduler_post(request):
             interviewer_groups_with_calendars,
             time_period=time_period,
             interview_type=interview_template.type,
+            possible_break=possible_break,
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))

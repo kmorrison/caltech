@@ -406,9 +406,11 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         num_interviews_score -= (5 * num_interviews)
         interview_slot.number_of_interviews = num_interviews
 
+    slots_to_store = [islot for islot in possible_schedule if islot.interviewer != BREAK]
+
 
     return Interview(
-        interview_slots=possible_schedule,
+        interview_slots=slots_to_store,
         room=room,
         priority=(
             room_score
