@@ -13,3 +13,10 @@ CREATE TABLE "jeeves_interviewtemplaterequisition" (
 );
 CREATE INDEX "jeeves_interviewtemplaterequisition_a811a29d" ON "jeeves_interviewtemplaterequisition" ("requisition_id");
 CREATE INDEX "jeeves_interviewtemplaterequisition_54dc7160" ON "jeeves_interviewtemplaterequisition" ("interview_template_id");
+CREATE TABLE "jeeves_alternaterecruitingevent" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "interviewer_id" integer NOT NULL REFERENCES "jeeves_interviewer" ("id"),
+    "type" integer NOT NULL,
+    "time" datetime NOT NULL
+);
+CREATE INDEX "jeeves_alternaterecruitingevent_2a084a8b" ON "jeeves_alternaterecruitingevent" ("interviewer_id");

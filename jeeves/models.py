@@ -116,6 +116,25 @@ class Interviewer(models.Model):
         ordering = ('display_name',)
 
 
+class AlternateRecruitingEventType(object):
+    CODE_TEST = 1
+    RESUME_SCREEN = 2
+
+
+class AlternateRecruitingEvent(models.Model):
+    interviewer = models.ForeignKey(Interviewer)
+    type = models.IntegerField(
+        choices=[
+            (AlternateRecruitingEventType.CODE_TEST, "Code Test"),
+            (AlternateRecruitingEventType.RESUME_SCREEN, "Resume Screen"),
+        ],
+    )
+    time = models.DateTimeField()
+
+    def __unicode__(self):
+        return self.get_type_display()
+
+
 class Room(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
@@ -270,6 +289,7 @@ class InterviewTemplateAdmin(admin.ModelAdmin):
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(InterviewTemplate, InterviewTemplateAdmin)
+admin.site.register(AlternateRecruitingEvent)
 admin.site.register(Preference)
 admin.site.register(Room)
 admin.site.register(InterviewSlot)
