@@ -304,13 +304,28 @@ def tracker(request):
                     interview['date'] = start_time.date().strftime("%x")
                     interview['start_time'] = start_time.strftime("%I:%M")
                     interview['end_time'] = end_time.strftime("%I:%M")
-                interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
+                interviews_dict_by_day_of_week[day_of_week] = {
+                    'num_interviews': len(grouped_interview_list) + day_of_week_to_number_of_interviewers.get(day_of_week, 0),
+                    'interviews': grouped_interview_list
+                }
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
                 'interviews': interviews_dict_by_day_of_week,
                 'num_interviews': num_interviews_for_interviewer,
             }
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
+            day_of_week_to_number_of_interviewers, total_number_of_interviews_for_week = \
+                get_number_of_alternate_events_for_interviewer(
+                    interviewer_name,
+                    last_week_start,
+                    next_week_start,
+                )
+            update_group_dict_with_alternate_recruiting_events(
+                group_dict,
+                interviewer_name,
+                last_week_start,
+                next_week_start
+            )
         tracker_dict[group] = group_dict
 
     date_format = "%m/%d"
@@ -334,6 +349,56 @@ def tracker(request):
                 context_instance=RequestContext(request)
             )
     )
+
+
+def update_group_dict_with_alternate_recruiting_events(
+    group_dict,
+    interviewer_name,
+    last_week_start,
+    next_week_start
+):
+    if interviewer_name not in group_dict['interviewer']:
+        return
+    interview_info_dict = group_dict['interviewer'][interviewer_name]
+    day_of_week_to_number_of_arc, total_number_of_arc_for_week = \
+        get_number_of_alternate_events_for_interviewer(
+            interviewer_name,
+            last_week_start,
+            next_week_start,
+        )
+
+    interview_info_dict['num_interviews'] += total_number_of_arc_for_week
+
+    for day_of_week, number_of_arc in day_of_week_to_number_of_arc.iteritems():
+        if day_of_week not in interview_info_dict['interviews']:
+            interview_info_dict['interviews'][day_of_week] = {
+                'num_interviews': 0,
+                'interviews': [],
+            }
+        interview_info_dict['interviews'][day_of_week]['num_interviews'] += \
+            number_of_arc
+
+
+def get_number_of_alternate_events_for_interviewer(
+    interviewer_name,
+    start_date,
+    end_date
+):
+    events = models.AlternateRecruitingEvent.objects.filter(
+        time__gte=start_date,
+        time__lte=end_date,
+        interviewer__display_name=interviewer_name,
+    )
+    day_of_week_to_number_of_arc = {}
+    total_number_of_arc_for_week = 0
+    for event in events:
+        weekday = event.time.weekday()
+        if weekday not in day_of_week_to_number_of_arc:
+            day_of_week_to_number_of_arc[weekday] = 0
+        day_of_week_to_number_of_arc[weekday] += 1
+        total_number_of_arc_for_week += 1
+
+    return day_of_week_to_number_of_arc, total_number_of_arc_for_week
 
 
 def convert_times_to_pst(dt):
