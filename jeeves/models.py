@@ -94,6 +94,10 @@ class Interviewer(models.Model):
 
     preferences_address = models.CharField(max_length=256, null=True, blank=True)
     max_interviews_per_week = models.IntegerField(null=True)
+    can_do_onsites = models.IntegerField(
+        default=1,
+        help_text='Type 1 if suitable for onsite, type 0 otherwise.'
+    )
 
     @property
     def real_max_interviews(self):

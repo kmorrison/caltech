@@ -20,3 +20,4 @@ CREATE TABLE "jeeves_alternaterecruitingevent" (
     "time" datetime NOT NULL
 );
 CREATE INDEX "jeeves_alternaterecruitingevent_2a084a8b" ON "jeeves_alternaterecruitingevent" ("interviewer_id");
+ALTER TABLE jeeves_interviewer ADD COLUMN "can_do_onsites" integer NOT NULL default 1;
