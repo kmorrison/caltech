@@ -1,5 +1,5 @@
 ALTER TABLE jeeves_interviewer ADD COLUMN "preferences_address" varchar(256);
-
+ALTER TABLE jeeves_interview ADD COLUMN "google_event_id" varchar(256) default '';
 CREATE TABLE "jeeves_interviewtemplate" (
     "id" integer NOT NULL PRIMARY KEY,
     "type" integer NOT NULL,

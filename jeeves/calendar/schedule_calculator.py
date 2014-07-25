@@ -30,6 +30,7 @@ class InterviewSlot(object):
         is_inside_time_preference=False,
         gets_buffer=False,
         number_of_interviews='n/a',
+        external_id=None,
         interviewer_name="",
     ):
         self.interviewer = interviewer
@@ -40,6 +41,7 @@ class InterviewSlot(object):
         self.is_inside_time_preference = is_inside_time_preference
         self.gets_buffer = gets_buffer
         self.number_of_interviews = number_of_interviews
+        self.external_id = external_id
 
     @property
     def display_time(self):
@@ -105,7 +107,13 @@ def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewer
         pruned_interviewer_groups.append(InterviewerGroup(num_required=interviewer_group.num_required, interviewers=igroup_interviewers))
     return pruned_interviewer_groups
 
-def calculate_schedules(interviewer_groups, time_period, possible_break=None, max_schedules=100):
+def calculate_schedules(
+    interviewer_groups,
+    time_period,
+    possible_break=None,
+    max_schedules=100,
+    interview_type=None
+):
     """Exposed method for calculating new interviews.
 
     Returns:
@@ -137,6 +145,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             rooms,
             preferences,
             interviewer_to_num_interviews_map,
+            interview_type=interview_type
         )
 
         # Add the schedule if it meets our validity heuristics
@@ -151,7 +160,7 @@ def calculate_schedules(interviewer_groups, time_period, possible_break=None, ma
             print "exiting %s %s" % (num_attempts, len(created_interviews))
             break
 
-    return sorted(created_interviews, key=lambda x: x.priority, reverse=True)[:20]
+    return sorted(created_interviews, key=lambda x: (x.room.start_time, x.priority))
 
 def get_all_rooms(time_period):
     all_rooms = models.Room.objects.all()
@@ -322,7 +331,7 @@ def _preference_score(interviewer_slot, preferences_calendar):
     return 0
 
 
-def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map):
+def create_interview(possible_schedule, interviewers, rooms, preferences, interviewer_to_num_interviews_map, interview_type=None):
     if possible_schedule is None:
         return None
 
@@ -338,12 +347,19 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         if possible_rooms:
             # Choose a valid room randomly to avoid scheduling the same room always
             # because of arbitrary db ordering
+            random_room = random.choice(possible_rooms)
             room = InterviewSlot(
-                random.choice(possible_rooms).interviewer.display_name,
+                random_room.interviewer.display_name,
                 interview_duration.start_time,
-                interview_duration.end_time
+                interview_duration.end_time,
+                external_id=random_room.interviewer.external_id,
             )
             room_score = 100
+
+            if interview_type == models.InterviewType.ON_SITE:
+                if not random_room.interviewer.is_suitable_for_onsite:
+                    room_score -= 20
+
 
     preference_scores = calculate_preference_scores(possible_schedule, preferences)
     preference_score = sum(preference_scores)
@@ -404,7 +420,7 @@ def filter_free_times_for_length(free_times):
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
 
 
-def persist_interview(interview_infos, interview_type, recruiter_id=None):
+def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id=''):
     interview_info = interview_infos[0]
     room_id = interview_info['room_id']
     candidate_name = interview_info['candidate_name']
@@ -413,7 +429,8 @@ def persist_interview(interview_infos, interview_type, recruiter_id=None):
         candidate_name=candidate_name,
         room_id=room_id,
         recruiter_id=recruiter_id,
-        type=interview_type
+        type=interview_type,
+        google_event_id=google_event_id
     )
 
     for interview_info in interview_infos:
@@ -510,9 +527,11 @@ def change_interviewer(interview_slot_id, interviewer_id):
 
 def delete_interview(interview_id):
     interview = models.Interview.objects.get(id=interview_id)
+    google_event_id = interview.google_event_id
     for slot in interview.interviewslot_set.all():
         slot.delete()
     interview.delete()
+    calendar_response = calendar_client.delete_event(google_event_id)
 
 
 def get_all_recruiters():

@@ -30,6 +30,7 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 START_HOUR = 9
 HOURS_PER_DAY = 10
 CHUNKS_PER_HOUR = 4  # Must divide evenly into 60
+SCHEDULE_TIME_FORMAT = "%I:%M"
 
 # TODO: Where does this go?
 def all_reqs():
@@ -245,7 +246,6 @@ def scheduler(request):
     return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
 def interview_post(request):
-
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
@@ -254,14 +254,53 @@ def interview_post(request):
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
+        interview_slot['start_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
+        interview_slot['end_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
-        # TODO: Get the name from the form
         interview_slot['candidate_name'] = candidate_name[0]
 
-    schedule_calculator.persist_interview(interviews, interview_type)
+
+    # Sorting so we can make the content in the right order.
+    interviews = sorted(interviews, key=lambda x: x['start_time'])
+
+    body_content = '\n'.join(create_calendar_event_content(interviews))
+
+    start_time = datetime.fromtimestamp(float(interview_form['room_start_time'][0]))
+    start_time = start_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    end_time = datetime.fromtimestamp(float(interview_form['room_end_time'][0]))
+    end_time = end_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    interview_type_string = models.InterviewTypeChoice(interview_type).display_string
+
+    calendar_response = calendar_client.create_event(
+        '%(type)s - %(candidate)s (%(requisition)s)' % {
+            'type': interview_type_string,
+            'candidate': candidate_name[0],
+            'requisition': interview_form['requisition'][0],
+        },
+        body_content,
+        start_time,
+        end_time,
+        interview_form['external_id'][0],
+        interview_form['room'][0],
+    )
+
+    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+
+
     return redirect('/new_scheduler?success=1')
+
+def create_calendar_event_content(interviews):
+    list_of_interviewers = []
+
+    for interview in interviews:
+            list_of_interviewers.append('%(time)s: %(name)s' % { 'time': interview['start_time'].timetz().strftime(SCHEDULE_TIME_FORMAT), 'name': interview['interviewer'] })
+
+    return list_of_interviewers
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
@@ -282,83 +321,10 @@ def tracker(request):
     last_week_start = start_date - timedelta(days=7)
     next_week_start = start_date + timedelta(days=7)
 
-    tracker_dict_2 = schedule_calculator.get_interviews_with_all_interviewers(
+    tracker_dict = schedule_calculator.get_interviews_with_all_interviewers(
         start_date,
         end_date
     )
-    tracker_dict = {'backend': {
-                        'chao': [{
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'House',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                }],
-                        'sumeet': [{
-                                    'candidate_name': 'Bobby',
-                                    'room': 'Candy',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'Warehouse',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 1
-                                }]
-                },
-                'ads': {
-                    'alanq': [{
-                                'candidate_name': 'Bob',
-                                'room': 'Shack',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            },
-                            {
-                                'candidate_name': 'Eli',
-                                'room': 'Rodeo',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            }],
-                    'mtakaki': [{
-                                'candidate_name': 'Jon',
-                                'room': 'Man',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 2
-                            },
-                            ]
-                }
-    }
-    tracker_dict = tracker_dict_2
-    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
-
 
     for group, interviewer_dict in tracker_dict.iteritems():
         group_dict = {}
@@ -372,9 +338,12 @@ def tracker(request):
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
                 for interview in grouped_interview_list:
-                    interview['date'] = interview['start_time'].date().strftime("%x")
-                    interview['start_time'] = interview['start_time'].strftime("%I:%M")
-                    interview['end_time'] = interview['end_time'].strftime("%I:%M")
+                    start_time = convert_times_to_pst(interview['start_time'])
+                    end_time = convert_times_to_pst(interview['end_time'])
+
+                    interview['date'] = start_time.date().strftime("%x")
+                    interview['start_time'] = start_time.strftime("%I:%M")
+                    interview['end_time'] = end_time.strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
@@ -406,6 +375,11 @@ def tracker(request):
             )
     )
 
+
+def convert_times_to_pst(dt):
+    return dt.astimezone(pytz.timezone('US/Pacific'))
+
+
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
     context = dict(
@@ -426,7 +400,7 @@ def modify_interview(request):
     elif form_data['hovercard-submit'] == 'Remove':
         if form_data['interview_id']:
             schedule_calculator.delete_interview(form_data['interview_id'])
-
+            
     return redirect('/tracker/')
 
 def scheduler_post(request):
@@ -547,6 +521,7 @@ def new_scheduler_post(request):
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
+            interview_type=interview_type
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
@@ -579,11 +554,10 @@ def _dump_schedules_into_json(schedules):
     return data
 
 def _dump_interview_slot_to_dictionary(slot):
-    time_format = "%I:%M"
     data = slot.__dict__
     data['start_datetime'] = time.mktime(data['start_time'].timetuple())
     data['end_datetime'] = time.mktime(data['end_time'].timetuple())
-    data['start_time'] = data['start_time'].strftime(time_format)
-    data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    data['start_time'] = data['start_time'].strftime(SCHEDULE_TIME_FORMAT)
+    data['end_time'] = data['end_time'].strftime(SCHEDULE_TIME_FORMAT)
 
+    return data

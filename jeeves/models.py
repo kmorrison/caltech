@@ -15,6 +15,10 @@ class Interview(models.Model):
     candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
+    google_event_id = models.CharField(max_length=256,
+        default='',
+        blank=True
+    )
     recruiter = models.ForeignKey(
         'Recruiter',
         default=None,
@@ -116,7 +120,10 @@ class Room(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    type = models.IntegerField()
+
+    type = models.IntegerField(
+        help_text='Type 1 if suitable for onsite, type 0 otherwise.'
+    )
 
     def __unicode__(self):
         return self.display_name
@@ -128,6 +135,10 @@ class Room(models.Model):
     @property
     def external_id(self):
         return self.address
+
+    @property
+    def is_suitable_for_onsite(self):
+        return self.type == 1
 
     class Meta:
         ordering = ('display_name',)

@@ -550,6 +550,7 @@ class DeleteInterviewTest(TestCase):
             False
         )
 
+
 class GetAllRecruiters(TestCase):
     def test_get_all_recruiters(self):
         recruiter = models.Recruiter.objects.create(
@@ -559,3 +560,19 @@ class GetAllRecruiters(TestCase):
         )
         recruiters = schedule_calculator.get_all_recruiters()
         self.assertIn(recruiter, recruiters)
+
+
+class ConvertTimesToPSTTest(TestCase):
+    def test_convert_times_to_pst(self):
+        old_datetime = datetime(
+            2014,
+            7,
+            25,
+            23,
+            45,
+            tzinfo=pytz.timezone('UTC')
+        )
+        self.assertEqual(
+            views.convert_times_to_pst(old_datetime),
+            old_datetime.astimezone(pytz.timezone('US/Pacific'))
+        )
