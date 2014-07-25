@@ -35,10 +35,11 @@
                 <div style="display:none">
                     <input type="hidden" name="start_time" value="{{interview_slot.start_datetime}}">
                     <input type="hidden" name="end_time" value="{{interview_slot.end_datetime}}">
-                    <input type="hidden" name="room" value="{{schedule.room.interviewer}}">
                     <input type="hidden" name="interviewer" value="{{interview_slot.interviewer}}">
                 </div>
-                {% endfor %} 
+                {% endfor %}
+                <input type="hidden" name="room" value="{{schedule.room.interviewer}}">
+                <input type="hidden" name="external_id" value="{{schedule.room.external_id}}">
                 <input type="submit" value="Schedule Interviews"/>
             </form>
         </div>

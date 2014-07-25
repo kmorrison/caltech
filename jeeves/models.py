@@ -15,6 +15,10 @@ class Interview(models.Model):
     candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
+    google_event_id = models.CharField(max_length=256,
+        default='',
+        blank=True
+    )
     recruiter = models.ForeignKey(
         'Recruiter',
         default=None,
@@ -22,11 +26,10 @@ class Interview(models.Model):
         blank=True
     )
 
-
 class InterviewType(object):
     ON_SITE = 1
     SKYPE = 2
-    SKYPE_ON_SITE = 3
+    SKYPE_ON_SITE = 4
 
     @classmethod
     def get_value(cls, *flags):
@@ -43,16 +46,20 @@ class InterviewType(object):
 
 class InterviewTypeChoice(object):
 
-  def __init__(self, interview_type):
-      self.interview_type = interview_type
+    def __init__(self, interview_type):
+        self.interview_type = interview_type
 
-  @property
-  def display_string(self):
-    return {
-      InterviewType.ON_SITE: 'OS',
-      InterviewType.SKYPE: 'SPI',
-      InterviewType.SKYPE_ON_SITE: 'SOS',
-    }.get(self.interview_type)
+    mapping = {
+        InterviewType.ON_SITE: 'OS',
+        InterviewType.SKYPE: 'SPI',
+        InterviewType.SKYPE_ON_SITE: 'SOS',
+    }
+
+    reverse_mapping = dict([(v, k) for k, v in mapping.items()])
+
+    @property
+    def display_string(self):
+        return self.mapping.get(self.interview_type)
 
 
 class TimeChoice(object):
@@ -109,11 +116,33 @@ class Interviewer(models.Model):
         ordering = ('display_name',)
 
 
+class AlternateRecruitingEventType(object):
+    CODE_TEST = 1
+    RESUME_SCREEN = 2
+
+
+class AlternateRecruitingEvent(models.Model):
+    interviewer = models.ForeignKey(Interviewer)
+    type = models.IntegerField(
+        choices=[
+            (AlternateRecruitingEventType.CODE_TEST, "Code Test"),
+            (AlternateRecruitingEventType.RESUME_SCREEN, "Resume Screen"),
+        ],
+    )
+    time = models.DateTimeField()
+
+    def __unicode__(self):
+        return self.get_type_display()
+
+
 class Room(models.Model):
     name = models.CharField(max_length=256)
     domain = models.CharField(max_length=256)
     display_name = models.CharField(max_length=256)
-    type = models.IntegerField()
+
+    type = models.IntegerField(
+        help_text='Type 1 if suitable for onsite, type 0 otherwise.'
+    )
 
     def __unicode__(self):
         return self.display_name
@@ -125,6 +154,10 @@ class Room(models.Model):
     @property
     def external_id(self):
         return self.address
+
+    @property
+    def is_suitable_for_onsite(self):
+        return self.type == 1
 
     class Meta:
         ordering = ('display_name',)
@@ -142,6 +175,26 @@ class Requisition(models.Model):
 
     class Meta:
         ordering = ('name',)
+
+
+class InterviewTemplate(models.Model):
+    requisition = models.ManyToManyField(
+        Requisition,
+        through='InterviewTemplateRequisition',
+    )
+    type = models.IntegerField(
+        help_text="OS=%s, SPI=%s, SOS=%s" % (InterviewType.ON_SITE, InterviewType.SKYPE, InterviewType.SKYPE_ON_SITE),
+    )
+    template_name = models.CharField(max_length=256)
+
+    def __unicode__(self):
+        return self.template_name
+
+
+class InterviewTemplateRequisition(models.Model):
+    requisition = models.ForeignKey(Requisition)
+    interview_template = models.ForeignKey(InterviewTemplate)
+    number_per_requisition = models.IntegerField()
 
 
 class InterviewSlot(models.Model):
@@ -225,8 +278,18 @@ class PreferenceAdmin(admin.ModelAdmin):
     list_display = ['interviewer']
 
 
+class InterviewTemplateInline(admin.TabularInline):
+    model = InterviewTemplate.requisition.through
+
+
+class InterviewTemplateAdmin(admin.ModelAdmin):
+    inlines = [InterviewTemplateInline]
+
+
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
+admin.site.register(InterviewTemplate, InterviewTemplateAdmin)
+admin.site.register(AlternateRecruitingEvent)
 admin.site.register(Preference)
 admin.site.register(Room)
 admin.site.register(InterviewSlot)

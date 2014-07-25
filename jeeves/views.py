@@ -30,6 +30,7 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 START_HOUR = 9
 HOURS_PER_DAY = 10
 CHUNKS_PER_HOUR = 4  # Must divide evenly into 60
+SCHEDULE_TIME_FORMAT = "%I:%M"
 
 # TODO: Where does this go?
 def all_reqs():
@@ -51,7 +52,13 @@ def all_interview_types():
     return [
       models.InterviewTypeChoice(models.InterviewType.ON_SITE),
       models.InterviewTypeChoice(models.InterviewType.SKYPE),
+      models.InterviewTypeChoice(models.InterviewType.SKYPE_ON_SITE),
     ]
+
+
+def all_interview_templates():
+    return models.InterviewTemplate.objects.all()
+
 
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
@@ -66,41 +73,8 @@ def get_interviewers(requisition, also_include=None, dont_include=None, squash_g
 
     return required_interviewers, interviewers - required_interviewers
 
-def get_interviewer_groups(formset, also_include=None, dont_include=None):
-    """Extract interviewers requirements from the form and turn them into InterviewerGroups.
-    XXX: This is pretty hacky right now as we transition to formsets on the form
-    """
-    # TODO: Collapse querys into single, nonlooping query
-    requisitions = [form.cleaned_data['requisition'] for form in formset if form.cleaned_data]
-    requisitions = [models.Requisition.objects.get(id=req.id) for req in requisitions]
-    interviewers_by_requisition = [set(requisition.interviewers.all()) for requisition in requisitions]
-    interviewer_groups = []
-    if dont_include:
-        dont_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewers_by_requisition = [interviewers_by_req - dont_interviewers for interviewers_by_req in interviewers_by_requisition]
-
-    if also_include:
-        must_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewer_groups.append((len(must_interviewers), must_interviewers))
-
-    interviewer_groups += [(
-        form.cleaned_data['num_required'],
-        interviewers,
-        ) for interviewers, form in zip(interviewers_by_requisition, formset)
-    ]
-
-    # Reduce interviewer sets
-    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
-    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
-        for _, other_interviewers in interviewer_groups[i+1:]:
-            other_interviewers.difference_update(interviewers)
-
-    interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
-    return interviewer_groups
-
-def get_interview_groups_with_requirements(requisition, interview_type, also_include=None, dont_include=None):
-    requirements = rules.get_interview_requirements(requisition, interview_type)
-    interviewer_groups = rules.get_interview_group(requirements)
+def get_interview_groups_with_requirements(template_requisitions, also_include=None, dont_include=None):
+    interviewer_groups = rules.get_interview_group([(d['number_per_requisition'], d['requisition_id']) for d in template_requisitions])
 
     # Reduce interviewer sets
     interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
@@ -227,20 +201,7 @@ def find_times_post(request):
     )
 
 
-def scheduler(request):
-    context = dict(
-        requisition_formset=RequisitionScheduleFormset(
-            initial=[dict(
-                num_required=2,
-                requisition=getattr(secret, 'preferred_requisition_id', None) or 1,
-            )]
-        ),
-        scheduler_form=SuggestScheduleForm(),
-    )
-    return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
-
 def interview_post(request):
-
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
@@ -249,14 +210,53 @@ def interview_post(request):
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
         interview_slot['start_time'] = datetime.fromtimestamp(float(interview_slot['start_time']))
+        interview_slot['start_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
         interview_slot['end_time'] = datetime.fromtimestamp(float(interview_slot['end_time']))
+        interview_slot['end_time'].replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
         interview_slot['interviewer_id'] = models.Interviewer.objects.get(name=interview_slot['interviewer'].split('@')[0]).id
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
-        # TODO: Get the name from the form
         interview_slot['candidate_name'] = candidate_name[0]
 
-    schedule_calculator.persist_interview(interviews, interview_type)
+
+    # Sorting so we can make the content in the right order.
+    interviews = sorted(interviews, key=lambda x: x['start_time'])
+
+    body_content = '\n'.join(create_calendar_event_content(interviews))
+
+    start_time = datetime.fromtimestamp(float(interview_form['room_start_time'][0]))
+    start_time = start_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    end_time = datetime.fromtimestamp(float(interview_form['room_end_time'][0]))
+    end_time = end_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+
+    interview_type_string = models.InterviewTypeChoice(interview_type).display_string
+
+    calendar_response = calendar_client.create_event(
+        '%(type)s - %(candidate)s (%(requisition)s)' % {
+            'type': interview_type_string,
+            'candidate': candidate_name[0],
+            'requisition': interview_form['requisition'][0],
+        },
+        body_content,
+        start_time,
+        end_time,
+        interview_form['external_id'][0],
+        interview_form['room'][0],
+    )
+
+    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+
+
     return redirect('/new_scheduler?success=1')
+
+def create_calendar_event_content(interviews):
+    list_of_interviewers = []
+
+    for interview in interviews:
+            list_of_interviewers.append('%(time)s: %(name)s' % { 'time': interview['start_time'].timetz().strftime(SCHEDULE_TIME_FORMAT), 'name': interview['interviewer'] })
+
+    return list_of_interviewers
 
 def get_color_group_for_requisition(requisition):
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'pink', 'grey', 'magenta']
@@ -277,83 +277,10 @@ def tracker(request):
     last_week_start = start_date - timedelta(days=7)
     next_week_start = start_date + timedelta(days=7)
 
-    tracker_dict_2 = schedule_calculator.get_interviews_with_all_interviewers(
+    tracker_dict = schedule_calculator.get_interviews_with_all_interviewers(
         start_date,
         end_date
     )
-    tracker_dict = {'backend': {
-                        'chao': [{
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'House',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'jorge',
-                                    'room': 'Airport',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                }],
-                        'sumeet': [{
-                                    'candidate_name': 'Bobby',
-                                    'room': 'Candy',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 0
-                                },
-                                {
-                                    'candidate_name': 'Bob',
-                                    'room': 'Warehouse',
-                                    'date': '',
-                                    'start_time': datetime(2014, 1, 2, 9, 2),
-                                    'end_time': datetime(2014, 1, 2, 12, 5),
-                                    'day_of_week': 1
-                                }]
-                },
-                'ads': {
-                    'alanq': [{
-                                'candidate_name': 'Bob',
-                                'room': 'Shack',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            },
-                            {
-                                'candidate_name': 'Eli',
-                                'room': 'Rodeo',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 4
-                            }],
-                    'mtakaki': [{
-                                'candidate_name': 'Jon',
-                                'room': 'Man',
-                                'date': '',
-                                'start_time': datetime(2014, 1, 2, 9, 2),
-                                'end_time': datetime(2014, 1, 2, 12, 5),
-                                'day_of_week': 2
-                            },
-                            ]
-                }
-    }
-    tracker_dict = tracker_dict_2
-    #tracker_dict = schedule_calculator.get_interviews(start_date, end_date)
-
 
     for group, interviewer_dict in tracker_dict.iteritems():
         group_dict = {}
@@ -367,9 +294,12 @@ def tracker(request):
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
                 for interview in grouped_interview_list:
-                    interview['date'] = interview['start_time'].date().strftime("%x")
-                    interview['start_time'] = interview['start_time'].strftime("%I:%M")
-                    interview['end_time'] = interview['end_time'].strftime("%I:%M")
+                    start_time = convert_times_to_pst(interview['start_time'])
+                    end_time = convert_times_to_pst(interview['end_time'])
+
+                    interview['date'] = start_time.date().strftime("%x")
+                    interview['start_time'] = start_time.strftime("%I:%M")
+                    interview['end_time'] = end_time.strftime("%I:%M")
                 interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
@@ -401,14 +331,20 @@ def tracker(request):
             )
     )
 
+
+def convert_times_to_pst(dt):
+    return dt.astimezone(pytz.timezone('US/Pacific'))
+
+
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
     context = dict(
       itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times(),
+      interview_templates=all_interview_templates(),
       success=success,
-      recruiters=schedule_calculator.get_all_recruiters()
+      recruiters=schedule_calculator.get_all_recruiters(),
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
@@ -422,61 +358,6 @@ def modify_interview(request):
             schedule_calculator.delete_interview(form_data['interview_id'])
 
     return redirect('/tracker/')
-
-def scheduler_post(request):
-    requisition_formset = RequisitionScheduleFormset(request.POST)
-    scheduler_form = SuggestScheduleForm(request.POST)
-    valid_submission = scheduler_form.is_valid() and requisition_formset.is_valid()
-    schedules = []
-    if not valid_submission:
-        return render(
-                request,
-                'scheduler.html',
-                dict(
-                    requisition_formset=requisition_formset,
-                    scheduler_form=scheduler_form,
-                    valid_submission=valid_submission,
-                    schedules=schedules,
-                )
-        )
-
-    interviewer_groups = get_interviewer_groups(
-            requisition_formset,
-            also_include=scheduler_form.cleaned_data['also_include'],
-            dont_include=scheduler_form.cleaned_data['dont_include'],
-    )
-
-    calendar_responses = [
-        calendar_client.get_calendars(
-            interviewer_group.interviewers,
-            scheduler_form.time_period)
-        for interviewer_group in interviewer_groups
-        if interviewer_group.num_required
-    ]
-
-    interviewer_groups_with_calendars = [
-        schedule_calculator.InterviewerGroup(
-            interviewers=calendar_response.interview_calendars,
-            num_required=interviewer_group.num_required,
-        )
-        for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
-    ]
-
-    schedules = schedule_calculator.calculate_schedules(
-            interviewer_groups_with_calendars,
-            time_period=scheduler_form.time_period,
-            possible_break=scheduler_form.possible_break,
-    )
-    return render(
-            request,
-            'scheduler.html',
-            dict(
-                requisition_formset=requisition_formset,
-                scheduler_form=scheduler_form,
-                valid_submission=valid_submission,
-                schedules=schedules,
-            )
-    )
 
 def get_time_period(start_time, end_time, date):
     def convert_form_datetime_to_sql_datetime(date, time):
@@ -498,23 +379,25 @@ def error_check_scheduler_form_post(form):
     else:
         return True, []
 
-
-def get_interviewer_set(interviewer_type, requisition):
-    return []
-
 def new_scheduler_post(request):
     form_data = request.POST
-    interview_type = int(form_data['interview_type'])
     candidate_name = form_data['candidate_name']
+    interview_template_id = int(form_data['interview_template'])
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
 
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    requisition = models.Requisition.objects.get(name=form_data['requisition'])
-    interviewer_groups = get_interview_groups_with_requirements(requisition, interview_type)
-    time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
+    interview_template = models.InterviewTemplate.objects.get(id=interview_template_id)
+    interviewer_groups = get_interview_groups_with_requirements(
+        interview_template.interviewtemplaterequisition_set.values()
+    )
+    time_period = get_time_period(
+        form_data['start_time'],
+        form_data['end_time'],
+        form_data['date'],
+    )
 
     calendar_responses = [
         calendar_client.get_calendars(
@@ -535,6 +418,7 @@ def new_scheduler_post(request):
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
+            interview_type=interview_template.type,
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
@@ -542,7 +426,7 @@ def new_scheduler_post(request):
     scheduler_post_result = {
         'form_is_valid': form_is_valid,
         'data': _dump_schedules_into_json(schedules),
-        'interview_type': interview_type,
+        'interview_type': interview_template.type,
         'candidate_name': candidate_name
     }
 
@@ -567,11 +451,10 @@ def _dump_schedules_into_json(schedules):
     return data
 
 def _dump_interview_slot_to_dictionary(slot):
-    time_format = "%I:%M"
     data = slot.__dict__
     data['start_datetime'] = time.mktime(data['start_time'].timetuple())
     data['end_datetime'] = time.mktime(data['end_time'].timetuple())
-    data['start_time'] = data['start_time'].strftime(time_format)
-    data['end_time'] = data['end_time'].strftime(time_format)
-    return data
+    data['start_time'] = data['start_time'].strftime(SCHEDULE_TIME_FORMAT)
+    data['end_time'] = data['end_time'].strftime(SCHEDULE_TIME_FORMAT)
 
+    return data

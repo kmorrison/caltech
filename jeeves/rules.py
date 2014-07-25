@@ -26,7 +26,7 @@ def get_interview_requirements(requisition, interview_type):
 
 def get_interview_group(rule):
     result = []
-    for number, req_name in rule:
-        req = models.Requisition.objects.filter(name__startswith=req_name)[0]
+    for number, req_id in rule:
+        req = models.Requisition.objects.get(id=req_id)
         result.append([number, set(req.interviewers.all())])
     return result
