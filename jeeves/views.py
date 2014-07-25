@@ -385,7 +385,6 @@ def new_scheduler_post(request):
     interview_template_id = int(form_data['interview_template'])
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
-    import pdb; pdb.set_trace()
 
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
