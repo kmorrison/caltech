@@ -201,3 +201,8 @@ i { font-style: italic; }
   padding-left: 27px;
   text-decoration: none;
 }
+
+#scheduler_form{
+position:fixed;
+margin-left: 65px;
+}

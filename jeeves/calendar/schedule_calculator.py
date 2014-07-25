@@ -1,3 +1,4 @@
+import datetime
 from datetime import timedelta
 import collections
 import heapq
@@ -117,6 +118,13 @@ def _prune_interviewers_for_capacity(interviewers, time_period):
 
     return pruned_interviewers
 
+
+def _prune_interviewers_for_onsite_ability(interviewers, interview_type):
+    if interview_type == models.InterviewType.ON_SITE:
+        return [interviewer for interviewer in interviewers if interviewer.interviewer.can_do_onsites]
+    return interviewers
+
+
 def _prune_overcapacity_interviewers_from_groups(interviewer_groups, interviewers):
     interviewer_set = set([interviewer.interviewer.address for interviewer in interviewers])
     pruned_interviewer_groups = []
@@ -146,6 +154,7 @@ def calculate_schedules(
     interviewers = list(itertools.chain.from_iterable(
         interviewer_group.interviewers for interviewer_group in interviewer_groups
     ))
+    interviewers = _prune_interviewers_for_onsite_ability(interviewers, interview_type)
     interviewer_to_num_interviews_map = _prune_interviewers_for_capacity(interviewers, time_period)
     if not interviewer_to_num_interviews_map:
         raise NoInterviewersAvailableError
@@ -408,9 +417,11 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         num_interviews_score -= (5 * num_interviews)
         interview_slot.number_of_interviews = num_interviews
 
+    slots_to_store = [islot for islot in possible_schedule if islot.interviewer != BREAK]
+
 
     return Interview(
-        interview_slots=possible_schedule,
+        interview_slots=slots_to_store,
         room=room,
         priority=(
             room_score
@@ -447,17 +458,20 @@ def filter_free_times_for_length(free_times):
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
 
 
-def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id=''):
+def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id='', user_id=None):
     interview_info = interview_infos[0]
     room_id = interview_info['room_id']
     candidate_name = interview_info['candidate_name']
 
+    now = datetime.datetime.now()
     interview = models.Interview.objects.create(
         candidate_name=candidate_name,
         room_id=room_id,
         recruiter_id=recruiter_id,
         type=interview_type,
-        google_event_id=google_event_id
+        google_event_id=google_event_id,
+        user_id=user_id,
+        time_created=now,
     )
 
     for interview_info in interview_infos:

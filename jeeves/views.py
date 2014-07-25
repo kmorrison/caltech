@@ -1,18 +1,21 @@
+import logging
 import simplejson
 import pytz
 import time
 
+import datetime
 from datetime import date
 from datetime import datetime
+from datetime import time as dt_time
 from datetime import timedelta
 from itertools import groupby
 import operator
 
 from django import forms
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import render_to_response
-from django.shortcuts import redirect
 from django.template import RequestContext
 from django.http import HttpResponse
 
@@ -24,6 +27,16 @@ from jeeves.calendar.lib import TimePeriod
 
 from caltech import secret
 from caltech import settings
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    filename='log.log',
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
 
 # TODO: Clearly the wrong place for this
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -118,38 +131,11 @@ class RequisitionScheduleForm(forms.Form):
 RequisitionScheduleFormset = forms.formsets.formset_factory(RequisitionScheduleForm, extra=2)
 
 
-class SuggestScheduleForm(forms.Form):
-    start_time = forms.DateTimeField(label='Availability Start Time')
-    end_time = forms.DateTimeField(label='Availability End Time')
-
-    also_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-    )
-    dont_include = forms.ModelMultipleChoiceField(
-            queryset=all_interviewers(),
-            required=False,
-            label="Don't Include",
-    )
-
-    break_start_time = forms.DateTimeField(required=False, label='Break Start Time (optional)')
-    break_end_time = forms.DateTimeField(required=False, label='Break End Time (optional)')
-
-    @property
-    def time_period(self):
-        return TimePeriod(self.cleaned_data['start_time'], self.cleaned_data['end_time'])
-
-    @property
-    def possible_break(self):
-        if self.cleaned_data['break_start_time'] is None or  self.cleaned_data['break_end_time'] is None:
-            return None
-        return TimePeriod(self.cleaned_data['break_start_time'], self.cleaned_data['break_end_time'])
-
-
 def index(request):
     # TODO: Should this go in static?
     return render_to_response('index.html', {})
 
+@login_required
 def find_times(request):
     context = dict(
             find_times_form=FindTimesForm(),
@@ -199,7 +185,7 @@ def interview_post(request):
     interview_form = dict(request.POST)
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
-    recruiter_id = interview_form.pop('recruiter_id')
+    recruiter_id = interview_form.pop('recruiter_id')[0]
     candidate_name = interview_form.pop('candidate_name')
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
@@ -239,7 +225,13 @@ def interview_post(request):
         interview_form['room'][0],
     )
 
-    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+    schedule_calculator.persist_interview(
+        interviews,
+        interview_type,
+        google_event_id=calendar_response['id'],
+        recruiter_id=recruiter_id,
+        user_id=request.user.id,
+    )
 
 
     return redirect('/new_scheduler?success=1')
@@ -256,6 +248,7 @@ def get_color_group_for_requisition(index):
     colors = ['white']
     return colors[index%len(colors)]
 
+@login_required
 def tracker(request):
     if 'start_date' not in request.GET:
         today = date.today()
@@ -292,13 +285,28 @@ def tracker(request):
                     interview['date'] = start_time.date().strftime("%x")
                     interview['start_time'] = start_time.strftime("%I:%M")
                     interview['end_time'] = end_time.strftime("%I:%M")
-                interviews_dict_by_day_of_week[day_of_week] = {'num_interviews': len(grouped_interview_list), 'interviews': grouped_interview_list}
+                interviews_dict_by_day_of_week[day_of_week] = {
+                    'num_interviews': len(grouped_interview_list) + day_of_week_to_number_of_interviewers.get(day_of_week, 0),
+                    'interviews': grouped_interview_list
+                }
                 num_interviews_for_interviewer += len(grouped_interview_list)
             interviewer_info_dict = {
                 'interviews': interviews_dict_by_day_of_week,
                 'num_interviews': num_interviews_for_interviewer,
             }
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
+            day_of_week_to_number_of_interviewers, total_number_of_interviews_for_week = \
+                get_number_of_alternate_events_for_interviewer(
+                    interviewer_name,
+                    last_week_start,
+                    next_week_start,
+                )
+            update_group_dict_with_alternate_recruiting_events(
+                group_dict,
+                interviewer_name,
+                last_week_start,
+                next_week_start
+            )
         tracker_dict[group] = group_dict
 
     date_format = "%m/%d"
@@ -324,10 +332,61 @@ def tracker(request):
     )
 
 
+def update_group_dict_with_alternate_recruiting_events(
+    group_dict,
+    interviewer_name,
+    last_week_start,
+    next_week_start
+):
+    if interviewer_name not in group_dict['interviewer']:
+        return
+    interview_info_dict = group_dict['interviewer'][interviewer_name]
+    day_of_week_to_number_of_arc, total_number_of_arc_for_week = \
+        get_number_of_alternate_events_for_interviewer(
+            interviewer_name,
+            last_week_start,
+            next_week_start,
+        )
+
+    interview_info_dict['num_interviews'] += total_number_of_arc_for_week
+
+    for day_of_week, number_of_arc in day_of_week_to_number_of_arc.iteritems():
+        if day_of_week not in interview_info_dict['interviews']:
+            interview_info_dict['interviews'][day_of_week] = {
+                'num_interviews': 0,
+                'interviews': [],
+            }
+        interview_info_dict['interviews'][day_of_week]['num_interviews'] += \
+            number_of_arc
+
+
+def get_number_of_alternate_events_for_interviewer(
+    interviewer_name,
+    start_date,
+    end_date
+):
+    events = models.AlternateRecruitingEvent.objects.filter(
+        time__gte=start_date,
+        time__lte=end_date,
+        interviewer__display_name=interviewer_name,
+    )
+    day_of_week_to_number_of_arc = {}
+    total_number_of_arc_for_week = 0
+    for event in events:
+        weekday = event.time.weekday()
+        if weekday not in day_of_week_to_number_of_arc:
+            day_of_week_to_number_of_arc[weekday] = 0
+        day_of_week_to_number_of_arc[weekday] += 1
+        total_number_of_arc_for_week += 1
+
+    return day_of_week_to_number_of_arc, total_number_of_arc_for_week
+
+
 def convert_times_to_pst(dt):
     return dt.astimezone(pytz.timezone('US/Pacific'))
 
 
+@login_required
 def new_scheduler(request):
     success = 1 if 'success' in request.GET else 0
     context = dict(
@@ -371,6 +430,30 @@ def error_check_scheduler_form_post(form):
     else:
         return True, []
 
+def determine_break_from_interview_time(time_period, interview_type):
+    if interview_type != models.InterviewType.ON_SITE:
+        return None
+
+    tz_info = time_period.start_time.tzinfo
+    start_of_break = dt_time(12, 0, tzinfo=tz_info)
+    end_of_break = dt_time(13, 0, tzinfo=tz_info)
+    weekday = time_period.start_time.weekday()
+    if weekday == 4:  # Friday
+        end_of_break = dt_time(13, 30, tzinfo=tz_info)
+
+    date = time_period.start_time.date()
+    start_of_break_dt = datetime.combine(date, start_of_break)
+    end_of_break_dt = datetime.combine(date, end_of_break)
+    break_time_period = TimePeriod(
+        start_of_break_dt,
+        end_of_break_dt,
+    )
+    if time_period.contains(break_time_period):
+        print "Adding break %s" % break_time_period
+        return break_time_period
+    return None
+
+
 def new_scheduler_post(request):
     form_data = request.POST
     candidate_name = form_data['candidate_name']
@@ -407,10 +490,16 @@ def new_scheduler_post(request):
         for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
     ]
 
+    possible_break = determine_break_from_interview_time(
+        time_period,
+        interview_template.type,
+    )
+
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
             interview_type=interview_template.type,
+            possible_break=possible_break,
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))

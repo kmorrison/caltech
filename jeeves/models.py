@@ -4,27 +4,13 @@ from collections import namedtuple
 
 from django.db import models
 from django.contrib import admin
+from django.contrib.auth.models import User
 
 from datetime import datetime
 import pytz
 from caltech import settings
 
 DEFAULT_MAX_INTERVIEWS = 3
-
-class Interview(models.Model):
-    candidate_name = models.CharField(max_length=256)
-    room = models.ForeignKey('Room')
-    type = models.IntegerField()
-    google_event_id = models.CharField(max_length=256,
-        default='',
-        blank=True
-    )
-    recruiter = models.ForeignKey(
-        'Recruiter',
-        default=None,
-        null=True,
-        blank=True
-    )
 
 class InterviewType(object):
     ON_SITE = 1
@@ -62,6 +48,35 @@ class InterviewTypeChoice(object):
         return self.mapping.get(self.interview_type)
 
 
+class Interview(models.Model):
+    candidate_name = models.CharField(max_length=256)
+    room = models.ForeignKey('Room')
+    type = models.IntegerField()
+    time_created = models.DateTimeField(default=None, null=True, blank=True)
+    google_event_id = models.CharField(max_length=256,
+        default='',
+        blank=True
+    )
+    recruiter = models.ForeignKey(
+        'Recruiter',
+        default=None,
+        null=True,
+        blank=True
+    )
+    user = models.ForeignKey(
+        User,
+        default=None,
+        null=True,
+        blank=True,
+    )
+
+    def __unicode__(self):
+        return "%s - %s" % (InterviewTypeChoice.mapping.get(self.type, ''), self.candidate_name)
+
+    class Meta:
+        ordering = ('time_created',)
+
+
 class TimeChoice(object):
     # Use for display time purposes
 
@@ -94,6 +109,10 @@ class Interviewer(models.Model):
 
     preferences_address = models.CharField(max_length=256, null=True, blank=True)
     max_interviews_per_week = models.IntegerField(null=True)
+    can_do_onsites = models.IntegerField(
+        default=1,
+        help_text='Type 1 if suitable for onsite, type 0 otherwise.'
+    )
 
     @property
     def real_max_interviews(self):
@@ -287,6 +306,7 @@ class InterviewTemplateAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Interviewer, InterviewerAdmin)
+admin.site.register(Interview)
 admin.site.register(Requisition, RequisitionAdmin)
 admin.site.register(InterviewTemplate, InterviewTemplateAdmin)
 admin.site.register(AlternateRecruitingEvent)
