@@ -24,6 +24,9 @@ body {
 	background: #c41200;
 	padding: 10px;
 	margin: -10px;
+	position: fixed;
+	width: 100%;
+	z-index: 1000;
 	-webkit-box-shadow:0 5px 10px #aaa;
 	-moz-box-shadow:0 5px 10px #aaa;
 	box-shadow:0 5px 10px #aaa;
@@ -441,6 +444,7 @@ nav a{
 		padding: 1em;
 		-moz-border-radius: 15px;
 		border-radius: 15px;
+		margin-top: 60px;
 }		
 	
 
