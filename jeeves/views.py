@@ -73,38 +73,6 @@ def get_interviewers(requisition, also_include=None, dont_include=None, squash_g
 
     return required_interviewers, interviewers - required_interviewers
 
-def get_interviewer_groups(formset, also_include=None, dont_include=None):
-    """Extract interviewers requirements from the form and turn them into InterviewerGroups.
-    XXX: This is pretty hacky right now as we transition to formsets on the form
-    """
-    # TODO: Collapse querys into single, nonlooping query
-    requisitions = [form.cleaned_data['requisition'] for form in formset if form.cleaned_data]
-    requisitions = [models.Requisition.objects.get(id=req.id) for req in requisitions]
-    interviewers_by_requisition = [set(requisition.interviewers.all()) for requisition in requisitions]
-    interviewer_groups = []
-    if dont_include:
-        dont_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewers_by_requisition = [interviewers_by_req - dont_interviewers for interviewers_by_req in interviewers_by_requisition]
-
-    if also_include:
-        must_interviewers = set(models.Interviewer.objects.filter(id__in=[i.id for i in also_include]))
-        interviewer_groups.append((len(must_interviewers), must_interviewers))
-
-    interviewer_groups += [(
-        form.cleaned_data['num_required'],
-        interviewers,
-        ) for interviewers, form in zip(interviewers_by_requisition, formset)
-    ]
-
-    # Reduce interviewer sets
-    interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
-    for i, (_, interviewers) in enumerate(interviewer_groups[:-1]):
-        for _, other_interviewers in interviewer_groups[i+1:]:
-            other_interviewers.difference_update(interviewers)
-
-    interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
-    return interviewer_groups
-
 def get_interview_groups_with_requirements(template_requisitions, also_include=None, dont_include=None):
     interviewer_groups = rules.get_interview_group([(d['number_per_requisition'], d['requisition_id']) for d in template_requisitions])
 
@@ -232,18 +200,6 @@ def find_times_post(request):
             )
     )
 
-
-def scheduler(request):
-    context = dict(
-        requisition_formset=RequisitionScheduleFormset(
-            initial=[dict(
-                num_required=2,
-                requisition=getattr(secret, 'preferred_requisition_id', None) or 1,
-            )]
-        ),
-        scheduler_form=SuggestScheduleForm(),
-    )
-    return render_to_response('scheduler.html', context, context_instance=RequestContext(request))
 
 def interview_post(request):
     interview_form = dict(request.POST)
@@ -400,63 +356,8 @@ def modify_interview(request):
     elif form_data['hovercard-submit'] == 'Remove':
         if form_data['interview_id']:
             schedule_calculator.delete_interview(form_data['interview_id'])
-            
+
     return redirect('/tracker/')
-
-def scheduler_post(request):
-    requisition_formset = RequisitionScheduleFormset(request.POST)
-    scheduler_form = SuggestScheduleForm(request.POST)
-    valid_submission = scheduler_form.is_valid() and requisition_formset.is_valid()
-    schedules = []
-    if not valid_submission:
-        return render(
-                request,
-                'scheduler.html',
-                dict(
-                    requisition_formset=requisition_formset,
-                    scheduler_form=scheduler_form,
-                    valid_submission=valid_submission,
-                    schedules=schedules,
-                )
-        )
-
-    interviewer_groups = get_interviewer_groups(
-            requisition_formset,
-            also_include=scheduler_form.cleaned_data['also_include'],
-            dont_include=scheduler_form.cleaned_data['dont_include'],
-    )
-
-    calendar_responses = [
-        calendar_client.get_calendars(
-            interviewer_group.interviewers,
-            scheduler_form.time_period)
-        for interviewer_group in interviewer_groups
-        if interviewer_group.num_required
-    ]
-
-    interviewer_groups_with_calendars = [
-        schedule_calculator.InterviewerGroup(
-            interviewers=calendar_response.interview_calendars,
-            num_required=interviewer_group.num_required,
-        )
-        for calendar_response, interviewer_group in zip(calendar_responses, interviewer_groups)
-    ]
-
-    schedules = schedule_calculator.calculate_schedules(
-            interviewer_groups_with_calendars,
-            time_period=scheduler_form.time_period,
-            possible_break=scheduler_form.possible_break,
-    )
-    return render(
-            request,
-            'scheduler.html',
-            dict(
-                requisition_formset=requisition_formset,
-                scheduler_form=scheduler_form,
-                valid_submission=valid_submission,
-                schedules=schedules,
-            )
-    )
 
 def get_time_period(start_time, end_time, date):
     def convert_form_datetime_to_sql_datetime(date, time):
@@ -478,16 +379,13 @@ def error_check_scheduler_form_post(form):
     else:
         return True, []
 
-
-def get_interviewer_set(interviewer_type, requisition):
-    return []
-
 def new_scheduler_post(request):
     form_data = request.POST
     candidate_name = form_data['candidate_name']
     interview_template_id = int(form_data['interview_template'])
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
+    import pdb; pdb.set_trace()
 
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
@@ -521,7 +419,7 @@ def new_scheduler_post(request):
     schedules = schedule_calculator.calculate_schedules(
             interviewer_groups_with_calendars,
             time_period=time_period,
-            interview_type=interview_type
+            interview_type=interview_template.type,
     )
     if not schedules:
         return HttpResponse(simplejson.dumps({'form_is_valid': False, 'error_fields': ['no result found']}))
