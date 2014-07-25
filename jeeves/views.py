@@ -51,7 +51,13 @@ def all_interview_types():
     return [
       models.InterviewTypeChoice(models.InterviewType.ON_SITE),
       models.InterviewTypeChoice(models.InterviewType.SKYPE),
+      models.InterviewTypeChoice(models.InterviewType.SKYPE_ON_SITE),
     ]
+
+
+def all_interview_templates():
+    return models.InterviewTemplate.objects.all()
+
 
 def get_interviewers(requisition, also_include=None, dont_include=None, squash_groups=True):
     requisition = models.Requisition.objects.get(id=requisition.id)
@@ -98,9 +104,8 @@ def get_interviewer_groups(formset, also_include=None, dont_include=None):
     interviewer_groups = [schedule_calculator.InterviewerGroup(*interviewer_group) for interviewer_group in interviewer_groups]
     return interviewer_groups
 
-def get_interview_groups_with_requirements(requisition, interview_type, also_include=None, dont_include=None):
-    requirements = rules.get_interview_requirements(requisition, interview_type)
-    interviewer_groups = rules.get_interview_group(requirements)
+def get_interview_groups_with_requirements(template_requisitions, also_include=None, dont_include=None):
+    interviewer_groups = rules.get_interview_group([(d['number_per_requisition'], d['requisition_id']) for d in template_requisitions])
 
     # Reduce interviewer sets
     interviewer_groups = sorted(interviewer_groups, lambda x,y: len(y))
@@ -407,8 +412,9 @@ def new_scheduler(request):
       itypes=all_interview_types(),
       reqs=all_reqs(),
       times=all_times(),
+      interview_templates=all_interview_templates(),
       success=success,
-      recruiters=schedule_calculator.get_all_recruiters()
+      recruiters=schedule_calculator.get_all_recruiters(),
     )
     return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
 
@@ -504,17 +510,23 @@ def get_interviewer_set(interviewer_type, requisition):
 
 def new_scheduler_post(request):
     form_data = request.POST
-    interview_type = int(form_data['interview_type'])
     candidate_name = form_data['candidate_name']
+    interview_template_id = int(form_data['interview_template'])
     # error checking for request.POST
     form_is_valid, error_fields = error_check_scheduler_form_post(form_data)
 
     if not form_is_valid:
         return HttpResponse(simplejson.dumps({'form_is_valid': form_is_valid, 'error_fields': error_fields}))
 
-    requisition = models.Requisition.objects.get(name=form_data['requisition'])
-    interviewer_groups = get_interview_groups_with_requirements(requisition, interview_type)
-    time_period = get_time_period(form_data['start_time'], form_data['end_time'], form_data['date'])
+    interview_template = models.InterviewTemplate.objects.get(id=interview_template_id)
+    interviewer_groups = get_interview_groups_with_requirements(
+        interview_template.interviewtemplaterequisition_set.values()
+    )
+    time_period = get_time_period(
+        form_data['start_time'],
+        form_data['end_time'],
+        form_data['date'],
+    )
 
     calendar_responses = [
         calendar_client.get_calendars(
@@ -542,7 +554,7 @@ def new_scheduler_post(request):
     scheduler_post_result = {
         'form_is_valid': form_is_valid,
         'data': _dump_schedules_into_json(schedules),
-        'interview_type': interview_type,
+        'interview_type': interview_template.type,
         'candidate_name': candidate_name
     }
 

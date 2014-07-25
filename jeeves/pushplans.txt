@@ -1,1 +1,15 @@
 ALTER TABLE jeeves_interviewer ADD COLUMN "preferences_address" varchar(256);
+
+CREATE TABLE "jeeves_interviewtemplate" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "type" integer NOT NULL,
+    "template_name" varchar(256) NOT NULL
+);
+CREATE TABLE "jeeves_interviewtemplaterequisition" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "requisition_id" integer NOT NULL REFERENCES "jeeves_requisition" ("id"),
+    "interview_template_id" integer NOT NULL REFERENCES "jeeves_interviewtemplate" ("id"),
+    "number_per_requisition" integer NOT NULL
+);
+CREATE INDEX "jeeves_interviewtemplaterequisition_a811a29d" ON "jeeves_interviewtemplaterequisition" ("requisition_id");
+CREATE INDEX "jeeves_interviewtemplaterequisition_54dc7160" ON "jeeves_interviewtemplaterequisition" ("interview_template_id");

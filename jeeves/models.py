@@ -22,11 +22,10 @@ class Interview(models.Model):
         blank=True
     )
 
-
 class InterviewType(object):
     ON_SITE = 1
     SKYPE = 2
-    SKYPE_ON_SITE = 3
+    SKYPE_ON_SITE = 4
 
     @classmethod
     def get_value(cls, *flags):
@@ -43,16 +42,20 @@ class InterviewType(object):
 
 class InterviewTypeChoice(object):
 
-  def __init__(self, interview_type):
-      self.interview_type = interview_type
+    def __init__(self, interview_type):
+        self.interview_type = interview_type
 
-  @property
-  def display_string(self):
-    return {
-      InterviewType.ON_SITE: 'OS',
-      InterviewType.SKYPE: 'SPI',
-      InterviewType.SKYPE_ON_SITE: 'SOS',
-    }.get(self.interview_type)
+    mapping = {
+        InterviewType.ON_SITE: 'OS',
+        InterviewType.SKYPE: 'SPI',
+        InterviewType.SKYPE_ON_SITE: 'SOS',
+    }
+
+    reverse_mapping = dict([(v, k) for k, v in mapping.items()])
+
+    @property
+    def display_string(self):
+        return self.mapping.get(self.interview_type)
 
 
 class TimeChoice(object):
@@ -144,6 +147,26 @@ class Requisition(models.Model):
         ordering = ('name',)
 
 
+class InterviewTemplate(models.Model):
+    requisition = models.ManyToManyField(
+        Requisition,
+        through='InterviewTemplateRequisition',
+    )
+    type = models.IntegerField(
+        help_text="OS=%s, SPI=%s, SOS=%s" % (InterviewType.ON_SITE, InterviewType.SKYPE, InterviewType.SKYPE_ON_SITE),
+    )
+    template_name = models.CharField(max_length=256)
+
+    def __unicode__(self):
+        return self.template_name
+
+
+class InterviewTemplateRequisition(models.Model):
+    requisition = models.ForeignKey(Requisition)
+    interview_template = models.ForeignKey(InterviewTemplate)
+    number_per_requisition = models.IntegerField()
+
+
 class InterviewSlot(models.Model):
     interview = models.ForeignKey(Interview)
     interviewer = models.ForeignKey(Interviewer)
@@ -225,8 +248,17 @@ class PreferenceAdmin(admin.ModelAdmin):
     list_display = ['interviewer']
 
 
+class InterviewTemplateInline(admin.TabularInline):
+    model = InterviewTemplate.requisition.through
+
+
+class InterviewTemplateAdmin(admin.ModelAdmin):
+    inlines = [InterviewTemplateInline]
+
+
 admin.site.register(Interviewer, InterviewerAdmin)
 admin.site.register(Requisition, RequisitionAdmin)
+admin.site.register(InterviewTemplate, InterviewTemplateAdmin)
 admin.site.register(Preference)
 admin.site.register(Room)
 admin.site.register(InterviewSlot)
