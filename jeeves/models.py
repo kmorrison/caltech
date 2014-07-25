@@ -15,6 +15,10 @@ class Interview(models.Model):
     candidate_name = models.CharField(max_length=256)
     room = models.ForeignKey('Room')
     type = models.IntegerField()
+    google_event_id = models.CharField(max_length=256,
+        default='',
+        blank=True
+    )
     recruiter = models.ForeignKey(
         'Recruiter',
         default=None,

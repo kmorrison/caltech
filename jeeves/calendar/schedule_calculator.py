@@ -420,7 +420,7 @@ def filter_free_times_for_length(free_times):
     return [free_time for free_time in free_times if free_time.length_in_minutes >= MINUTES_OF_INTERVIEW]
 
 
-def persist_interview(interview_infos, interview_type, recruiter_id=None):
+def persist_interview(interview_infos, interview_type, recruiter_id=None, google_event_id=''):
     interview_info = interview_infos[0]
     room_id = interview_info['room_id']
     candidate_name = interview_info['candidate_name']
@@ -429,7 +429,8 @@ def persist_interview(interview_infos, interview_type, recruiter_id=None):
         candidate_name=candidate_name,
         room_id=room_id,
         recruiter_id=recruiter_id,
-        type=interview_type
+        type=interview_type,
+        google_event_id=google_event_id
     )
 
     for interview_info in interview_infos:
@@ -526,9 +527,11 @@ def change_interviewer(interview_slot_id, interviewer_id):
 
 def delete_interview(interview_id):
     interview = models.Interview.objects.get(id=interview_id)
+    google_event_id = interview.google_event_id
     for slot in interview.interviewslot_set.all():
         slot.delete()
     interview.delete()
+    calendar_response = calendar_client.delete_event(google_event_id)
 
 
 def get_all_recruiters():

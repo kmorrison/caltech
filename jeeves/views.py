@@ -257,7 +257,6 @@ def interview_post(request):
         interview_slot['room_id'] = models.Room.objects.get(display_name=interview_slot['room']).id
         interview_slot['candidate_name'] = candidate_name[0]
 
-    schedule_calculator.persist_interview(interviews, interview_type)
 
     # Sorting so we can make the content in the right order.
     interviews = sorted(interviews, key=lambda x: x['start_time'])
@@ -284,6 +283,9 @@ def interview_post(request):
         interview_form['external_id'][0],
         interview_form['room'][0],
     )
+
+    schedule_calculator.persist_interview(interviews, interview_type, google_event_id=calendar_response['id'])
+
 
     return redirect('/new_scheduler?success=1')
 
@@ -392,7 +394,7 @@ def modify_interview(request):
     elif form_data['hovercard-submit'] == 'Remove':
         if form_data['interview_id']:
             schedule_calculator.delete_interview(form_data['interview_id'])
-
+            
     return redirect('/tracker/')
 
 def scheduler_post(request):
