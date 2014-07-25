@@ -8,23 +8,30 @@
 
 {% endblock %}
 
-{% block body %}
-
-<div style="float:left;"><a href="/tracker/?start_date={{ last_week_start }}"><< Previous Week</a></div><div style="float:right;"><a href="/tracker/?start_date={{ next_week_start}}">Next Week >></a></div>
-
-<div style="text-align: center;">
-<input id="interviewerSearchInput" placeholder="Search Interviewer or Candidate">
-<input id="groupSearchInput" placeholder="Search Groups">
+{% block extra_header %}
+<div class="tracker-extra-header">
+  <div style="text-align:center">
+      <div style="display:inline;margin-right:10px;"><a href="/tracker/?start_date={{ last_week_start }}"><< Previous Week</a></div>
+      <input style="display:inline;" id="interviewerSearchInput" placeholder="Search Interviewer or Candidate">
+      <input style="display:inline;" id="groupSearchInput" placeholder="Search Groups">
+      <div style="display:inline;margin-left:10px;"><a href="/tracker/?start_date={{ next_week_start}}">Next Week >></a></div>
+  </div>
 </div>
 
-<br/><br/>
+<div style="margin:50px"></div>
+{% endblock %}
+
+{% block body %}
+
+
 
 <table border="1" class="tracker-header">
+  <div class="push-down">
 
   <tr>
     <th class="tracker-req"></th>
     {% for day, date in week_info %}
-      <th class="tracker-day">{{ day }}<br/>{{ date }}</th>
+      <th class="tracker-day">{{ day }} {{ date }}</th>
     {% endfor %}
   </tr>
 </table>
