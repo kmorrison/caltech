@@ -276,6 +276,12 @@ def tracker(request):
             num_interviews_for_interviewer = 0
             interviews.sort(key=operator.itemgetter('day_of_week'))
             interviews_dict_by_day_of_week = {}
+            day_of_week_to_number_of_interviewers, total_number_of_interviews_for_week = \
+                get_number_of_alternate_events_for_interviewer(
+                    interviewer_name,
+                    last_week_start,
+                    next_week_start,
+                )
             for day_of_week, interview_list in groupby(interviews, key=lambda x:x['day_of_week']):
                 grouped_interview_list = list(interview_list)
                 for interview in grouped_interview_list:
@@ -295,12 +301,6 @@ def tracker(request):
                 'num_interviews': num_interviews_for_interviewer,
             }
             group_dict['interviewer'][interviewer_name] = interviewer_info_dict
-            day_of_week_to_number_of_interviewers, total_number_of_interviews_for_week = \
-                get_number_of_alternate_events_for_interviewer(
-                    interviewer_name,
-                    last_week_start,
-                    next_week_start,
-                )
             update_group_dict_with_alternate_recruiting_events(
                 group_dict,
                 interviewer_name,
@@ -433,13 +433,13 @@ def error_check_scheduler_form_post(form):
 def determine_break_from_interview_time(time_period, interview_type):
     if interview_type != models.InterviewType.ON_SITE:
         return None
+    weekday = time_period.start_time.weekday()
+    if weekday != 4:  # Friday
+        return None
 
     tz_info = time_period.start_time.tzinfo
     start_of_break = dt_time(12, 0, tzinfo=tz_info)
-    end_of_break = dt_time(13, 0, tzinfo=tz_info)
-    weekday = time_period.start_time.weekday()
-    if weekday == 4:  # Friday
-        end_of_break = dt_time(13, 30, tzinfo=tz_info)
+    end_of_break = dt_time(13, 30, tzinfo=tz_info)
 
     date = time_period.start_time.date()
     start_of_break_dt = datetime.combine(date, start_of_break)
