@@ -559,18 +559,40 @@ def get_interviews_with_all_interviewers(*args, **kwargs):
 
     return interviews
 
+def create_calendar_body(time_name_pairs, recruiter, user):
+    list_of_interviewers = []
+
+    for time, name in time_name_pairs:
+        list_of_interviewers.append(
+            '%(time)s: %(name)s' % {
+                'time': time.timetz().strftime("%I:%M"),
+                'name': name,
+            },
+        )
+    body = '\n'.join(list_of_interviewers)
+
+    body += '\nRecruiter: %s (%s@%s)' % (recruiter.display_name, recruiter.name, recruiter.domain)
+    body += '\nScheduler by: %s' % (user.username,)
+
+    return body
+
 
 def change_interviewer(interview_slot_id, interviewer_id):
     slot = models.InterviewSlot.objects.get(id=interview_slot_id)
-    slot.interviewer_id = interviewer_id    
+    slot.interviewer_id = interviewer_id
     google_event_id = slot.interview.google_event_id
     if google_event_id:
         updated_description_list = []
-        for interview_slot in slot.interview.interviewslot_set.all():
-            start_time = interview_slot.start_time.astimezone(pytz.timezone('US/Pacific')).strftime("%I:%M")
-            updated_description_list.append('{time}: {name}'.format(time=start_time, name=interview_slot.interviewer.name))
-        updated_description = '\n'.join(updated_description_list)
-        calendar_response = calendar_client.update_event(google_event_id, updated_description)
+        new_description = create_calendar_body(
+            [(
+                interview_slot.start_time.astimezone(pytz.timezone('US/Pacific')),
+                interview_slot.interviewer.name)
+                for interview_slot in slot.interview.interviewslot_set.all()
+            ],
+            slot.interview.recruiter,
+            slot.interview.user,
+        )
+        calendar_response = calendar_client.update_event(google_event_id, new_description)
 
     slot.save()
 

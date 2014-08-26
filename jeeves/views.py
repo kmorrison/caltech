@@ -183,6 +183,7 @@ def find_times_post(request):
 
 def interview_post(request):
     interview_form = dict(request.POST)
+    import pdb; pdb.set_trace()
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
     recruiter_id = interview_form.pop('recruiter_id')[0]
@@ -202,7 +203,11 @@ def interview_post(request):
     # Sorting so we can make the content in the right order.
     interviews = sorted(interviews, key=lambda x: x['start_time'])
 
-    body_content = '\n'.join(create_calendar_event_content(interviews))
+    body_content = schedule_calculator.create_calendar_body(
+        [(interview['start_time'], interview['interviewer']) for interview in interviews],
+        models.Recruiter.objects.get(id=recruiter_id),
+        request.user,
+    )
 
     start_time = datetime.fromtimestamp(float(interview_form['room_start_time'][0]))
     start_time = start_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
@@ -233,16 +238,7 @@ def interview_post(request):
         user_id=request.user.id,
     )
 
-
     return redirect('/new_scheduler?success=1')
-
-def create_calendar_event_content(interviews):
-    list_of_interviewers = []
-
-    for interview in interviews:
-            list_of_interviewers.append('%(time)s: %(name)s' % { 'time': interview['start_time'].timetz().strftime(SCHEDULE_TIME_FORMAT), 'name': interview['interviewer'] })
-
-    return list_of_interviewers
 
 def get_color_group_for_requisition(index):
     colors = ['white']
