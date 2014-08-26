@@ -75,6 +75,7 @@
             <option value="{{ recruiter.id }}">{{ recruiter.display_name }}</option>
           {% endfor %}
         </select>
+        <input type="hidden" id="interview_template_input" name="interview_template_name">
         {% csrf_token %}
         <button type="submit">Schedule</button>
       </div>

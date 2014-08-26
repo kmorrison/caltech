@@ -58,18 +58,12 @@ $(document).ready(function() {
                  candidateNameInput.val($('input[name="candidate_name"]').val());
                  template.find('form').append(candidateNameInput);
 
-                 var interviewTypeInput = $('<input type="hidden" name="interview_type">')
-                 interviewTypeInput.val($('.type .chosen-select').val());
-                 template.find('form').append(interviewTypeInput);
-
-                 var requisitionInput = $('<input type="hidden" name="requisition">')
-                 requisitionInput.val($('.req .chosen-select').val());
-                 template.find('form').append(requisitionInput);
-
                    template.find('form').append(startTimeInput);
                    template.find('form').append(endTimeInput);
                    template.find('form').append(interviewerInput);
                  });
+
+                 template.find('#interview_template_input').val(data.interview_template_name);
 
 
                  $('.schedule-list').append(template); 

@@ -581,6 +581,7 @@ def change_interviewer(interview_slot_id, interviewer_id):
     slot = models.InterviewSlot.objects.get(id=interview_slot_id)
     slot.interviewer_id = interviewer_id
     google_event_id = slot.interview.google_event_id
+    slot.save()
     if google_event_id:
         updated_description_list = []
         new_description = create_calendar_body(
@@ -594,7 +595,6 @@ def change_interviewer(interview_slot_id, interviewer_id):
         )
         calendar_response = calendar_client.update_event(google_event_id, new_description)
 
-    slot.save()
 
 
 def delete_interview(interview_id):

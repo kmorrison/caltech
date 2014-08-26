@@ -183,10 +183,10 @@ def find_times_post(request):
 
 def interview_post(request):
     interview_form = dict(request.POST)
-    import pdb; pdb.set_trace()
     del interview_form['csrfmiddlewaretoken']
     interview_type = int(interview_form.pop('interview_type')[0])
     recruiter_id = interview_form.pop('recruiter_id')[0]
+    interview_template_name = interview_form.pop('interview_template_name')[0]
     candidate_name = interview_form.pop('candidate_name')
     interviews = map(dict, zip(*[[(k, v) for v in value] for k, value in interview_form.items()]))
     for interview_slot in interviews:
@@ -218,10 +218,10 @@ def interview_post(request):
     interview_type_string = models.InterviewTypeChoice(interview_type).display_string
 
     calendar_response = calendar_client.create_event(
-        '%(type)s - %(candidate)s (%(requisition)s)' % {
+        '%(type)s - %(candidate)s (%(interview_template_name)s)' % {
             'type': interview_type_string,
             'candidate': candidate_name[0],
-            'requisition': interview_form['requisition'][0],
+            'interview_template_name': interview_template_name,
         },
         body_content,
         start_time,
@@ -393,7 +393,11 @@ def new_scheduler(request):
       success=success,
       recruiters=schedule_calculator.get_all_recruiters(),
     )
-    return render_to_response('new_scheduler.html', context, context_instance=RequestContext(request))
+    return render_to_response(
+        'new_scheduler.html',
+        context,
+        context_instance=RequestContext(request),
+    )
 
 def modify_interview(request):
     form_data = request.POST
@@ -504,10 +508,14 @@ def new_scheduler_post(request):
         'form_is_valid': form_is_valid,
         'data': _dump_schedules_into_json(schedules),
         'interview_type': interview_template.type,
-        'candidate_name': candidate_name
+        'candidate_name': candidate_name,
+        'interview_template_name': interview_template.template_name,
     }
 
-    return HttpResponse(simplejson.dumps(scheduler_post_result), mimetype='application/json')
+    return HttpResponse(
+        simplejson.dumps(scheduler_post_result),
+        mimetype='application/json',
+    )
 
 
 def _dump_schedules_into_json(schedules):
