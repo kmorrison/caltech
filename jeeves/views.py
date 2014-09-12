@@ -413,7 +413,7 @@ def modify_interview(request):
 def get_time_period(start_time, end_time, date):
     def convert_form_datetime_to_sql_datetime(date, time):
       date_time = datetime.strptime("{date} {time}".format(date=date, time=time), "%m/%d/%Y %H:%M:%S")
-      date_time = date_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+      date_time = pytz.timezone(settings.TIME_ZONE).localize(date_time)
       return date_time
 
     start_datetime = convert_form_datetime_to_sql_datetime(date, start_time)

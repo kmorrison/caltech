@@ -170,7 +170,8 @@ class Client(object):
             self._service_client = ServiceClient(schedule.build_service())
 
     def get_calendars(self, interviewers, time_period):
-        return self._service_client.process_calendar_query(CalendarQuery(interviewers, time_period))
+        calendar_response = self._service_client.process_calendar_query(CalendarQuery(interviewers, time_period))
+        return calendar_response
 
     def create_event(self, title, body, time_start, time_end, location, location_name):
         return self._service_client.process_calendar_create(CalendarCreate(title, body, time_start, time_end, location, location_name))
