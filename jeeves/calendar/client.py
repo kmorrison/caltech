@@ -119,9 +119,12 @@ class CalendarResponse(object):
     def __init__(self, calendar_query, service_response):
         calendars = service_response['calendars']
         logger.debug("CALS: CalendarQuery:%r, Calendars:%r" % (calendar_query.to_query_body(), calendars))
-        self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.external_id]['busy'] if not calendars[interviewer.external_id].get('errors', {}))
+        self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.external_id]['busy'])
                 for interviewer in calendar_query.interviewers
-                if interviewer.external_id in calendars
+                if bool(
+                    interviewer.external_id in calendars
+                    and calendars[interviewer.external_id].get('errors', {})
+                )
         ]
 
     def get_interviewer(self, interviewer_address):
