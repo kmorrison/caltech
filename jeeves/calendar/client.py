@@ -12,7 +12,7 @@ from . import lib
 
 logger = logging.getLogger(__name__)
 
-MAX_INTERVIEWERS_IN_QUERY = 50
+MAX_INTERVIEWERS_IN_QUERY = 25
 
 class CalendarQuery(object):
 
