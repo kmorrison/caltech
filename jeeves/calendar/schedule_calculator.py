@@ -581,7 +581,7 @@ def create_calendar_body(time_name_pairs, recruiter, user):
             },
         )
     body += '\n'.join(list_of_interviewers)
-    body += "\n%s: Goodbye %s" % ((time_name_pairs[-1][0] - datetime.timedelta(minutes=60)).timetz().strftime("%I:%M %p"), recruiter.display_name)
+    body += "\n%s: Goodbye %s" % ((time_name_pairs[-1][0] + datetime.timedelta(minutes=MINUTES_OF_INTERVIEW)).timetz().strftime("%I:%M %p"), recruiter.display_name)
 
     body += '\n\nRecruiter: %s (%s@%s)' % (recruiter.display_name, recruiter.name, recruiter.domain)
     body += '\n\nScheduled by: %s' % (user.username,)
