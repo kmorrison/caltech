@@ -118,22 +118,19 @@ class CalendarResponse(object):
 
     def __init__(self, calendar_query, service_response):
         calendars = service_response['calendars']
+        logger.debug("CALS: CalendarQuery:%r, Calendars:%r" % (calendar_query.to_query_body(), calendars))
         self.interview_calendars = [InterviewCalendar(interviewer, calendar_query.time_period, calendars[interviewer.external_id]['busy'])
                 for interviewer in calendar_query.interviewers
                 if interviewer.external_id in calendars
         ]
-        self._memoize_lookup = {}
 
     def get_interviewer(self, interviewer_address):
-        if interviewer_address in self._memoize_lookup:
-            return self._memoize_lookup[interviewer_address]
         interview_calendars = [intcal for intcal in self.interview_calendars if intcal.interviewer.address == interviewer_address]
         assert len(interview_calendars) <= 1
         if interview_calendars:
             intcal = interview_calendars[0]
         else:
             intcal = None
-        self._memoize_lookup[interviewer_address] = intcal
         return intcal
 
     @property
@@ -255,7 +252,7 @@ class ServiceClient(object):
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
         print "query body:"
-        logger.debug(query_body)
+        logging.debug(query_body)
         #pprint(query_body)
         return CalendarResponse(
                 calendar_query,
