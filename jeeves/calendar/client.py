@@ -90,12 +90,13 @@ class InterviewCalendar(object):
                     period_of_interest.end_time
                 )
         ]
-        logger.debug("Interviewer:%s, TP:%r, busy_time:%r, free_times:%r" % (
+        logger.debug("Interviewer:%s, TP:%r, response:%r, busy_times:%r, free_times:%r" % (
             interviewer.address,
             period_of_interest,
+            start_end_pairs,
             busy_times,
             self.free_times,
-        )
+        ))
 
     def has_availability_during(self, time_period):
         for free_time in self.free_times:
