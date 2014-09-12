@@ -599,7 +599,7 @@ def change_interviewer(interview_slot_id, interviewer_id):
         new_description = create_calendar_body(
             [(
                 interview_slot.start_time.astimezone(pytz.timezone('US/Pacific')),
-                interview_slot.interviewer.name)
+                interview_slot.interviewer.display_name)
                 for interview_slot in slot.interview.interviewslot_set.all()
             ],
             slot.interview.recruiter,

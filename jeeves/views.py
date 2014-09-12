@@ -204,7 +204,7 @@ def interview_post(request):
     interviews = sorted(interviews, key=lambda x: x['start_time'])
 
     body_content = schedule_calculator.create_calendar_body(
-        [(interview['start_time'], interview['interviewer']) for interview in interviews],
+        [(interview['start_time'], models.Interviewer.objects.get(id=interview['interviewer_id'].display_name)) for interview in interviews],
         models.Recruiter.objects.get(id=recruiter_id),
         request.user,
     )
