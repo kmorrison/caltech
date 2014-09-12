@@ -426,9 +426,9 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
 
     return Interview(
         interview_slots=slots_to_store,
-        room=room,
+        room=chosen_room,
         priority=(
-            chosen_room
+            room_score
             + preference_score
             + interviewer_schedule_padding_score
             + num_interviews_score
