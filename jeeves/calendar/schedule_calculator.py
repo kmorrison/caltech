@@ -140,7 +140,7 @@ def calculate_schedules(
     interviewer_groups,
     time_period,
     possible_break=None,
-    max_schedules=100,
+    max_schedules=150,
     interview_type=None
 ):
     """Exposed method for calculating new interviews.
@@ -372,7 +372,7 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
     if possible_schedule is None:
         return None
 
-    room = None
+    chosen_room = None
     room_score = 0
     if rooms is not None:
         # If we're looking at rooms, find one that fits and insert it into the schedule
@@ -382,20 +382,24 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
         if possible_rooms:
+            onsite_rooms = [room for room in rooms if room.interviewer.is_suitable_for_onsite]
+            if interview_type == models.InterviewType.ON_SITE and onsite_rooms:
+                possible_rooms = onsite_rooms
+
             # Choose a valid room randomly to avoid scheduling the same room always
             # because of arbitrary db ordering
             random_room = random.choice(possible_rooms)
-            room = InterviewSlot(
+            chosen_room = InterviewSlot(
                 random_room.interviewer.display_name,
                 interview_duration.start_time,
                 interview_duration.end_time,
                 external_id=random_room.interviewer.external_id,
             )
-            room_score = 100
+            room_score = 150
 
             if interview_type == models.InterviewType.ON_SITE:
                 if not random_room.interviewer.is_suitable_for_onsite:
-                    room_score -= 20
+                    room_score -= 50
 
 
     preference_scores = calculate_preference_scores(possible_schedule, preferences)
@@ -424,7 +428,7 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         interview_slots=slots_to_store,
         room=room,
         priority=(
-            room_score
+            chosen_room
             + preference_score
             + interviewer_schedule_padding_score
             + num_interviews_score
