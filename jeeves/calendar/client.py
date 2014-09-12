@@ -123,7 +123,7 @@ class CalendarResponse(object):
                 for interviewer in calendar_query.interviewers
                 if bool(
                     interviewer.external_id in calendars
-                    and calendars[interviewer.external_id].get('errors', {})
+                    and not calendars[interviewer.external_id].get('errors', {})
                 )
         ]
 
