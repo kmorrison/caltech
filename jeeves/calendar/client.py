@@ -255,6 +255,7 @@ class ServiceClient(object):
     def process_calendar_query(self, calendar_query):
         query_body = calendar_query.to_query_body()
         print "query body:"
+        logger.debug(query_body)
         #pprint(query_body)
         return CalendarResponse(
                 calendar_query,
