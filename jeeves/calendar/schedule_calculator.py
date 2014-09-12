@@ -190,7 +190,7 @@ def calculate_schedules(
             print "exiting %s %s" % (num_attempts, len(created_interviews))
             break
 
-    return sorted(created_interviews, key=lambda x: (x.room.start_time, x.priority))
+    return sorted(created_interviews, key=lambda x: (-1 * x.priority, x.room_start_time))
 
 def get_all_rooms(time_period):
     all_rooms = models.Room.objects.all()
