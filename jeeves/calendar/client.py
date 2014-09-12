@@ -130,7 +130,7 @@ class CalendarResponse(object):
         for calendar in calendars:
             errors = calendars[calendar].get('errors', {})
             if errors:
-                logger.warning("%r" % (calendars[calendar],))
+                logger.warning("calendar:%s, %r" % (calendar, calendars[calendar],))
 
     def get_interviewer(self, interviewer_address):
         interview_calendars = [intcal for intcal in self.interview_calendars if intcal.interviewer.address == interviewer_address]
