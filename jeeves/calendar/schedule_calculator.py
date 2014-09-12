@@ -381,25 +381,27 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
             possible_schedule[-1].end_time
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
-        if possible_rooms:
-            onsite_rooms = [room for room in possible_rooms if room.interviewer.is_suitable_for_onsite]
-            if interview_type == models.InterviewType.ON_SITE and onsite_rooms:
-                possible_rooms = onsite_rooms
+        if not possible_rooms:
+            return None
 
-            # Choose a valid room randomly to avoid scheduling the same room always
-            # because of arbitrary db ordering
-            random_room = random.choice(possible_rooms)
-            chosen_room = InterviewSlot(
-                random_room.interviewer.display_name,
-                interview_duration.start_time,
-                interview_duration.end_time,
-                external_id=random_room.interviewer.external_id,
-            )
-            room_score = 150
+        onsite_rooms = [room for room in possible_rooms if room.interviewer.is_suitable_for_onsite]
+        if interview_type == models.InterviewType.ON_SITE and onsite_rooms:
+            possible_rooms = onsite_rooms
 
-            if interview_type == models.InterviewType.ON_SITE:
-                if not random_room.interviewer.is_suitable_for_onsite:
-                    room_score -= 50
+        # Choose a valid room randomly to avoid scheduling the same room always
+        # because of arbitrary db ordering
+        random_room = random.choice(possible_rooms)
+        chosen_room = InterviewSlot(
+            random_room.interviewer.display_name,
+            interview_duration.start_time,
+            interview_duration.end_time,
+            external_id=random_room.interviewer.external_id,
+        )
+        room_score = 150
+
+        if interview_type == models.InterviewType.ON_SITE:
+            if not random_room.interviewer.is_suitable_for_onsite:
+                room_score -= 50
 
 
     preference_scores = calculate_preference_scores(possible_schedule, preferences)
