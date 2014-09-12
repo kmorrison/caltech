@@ -53,7 +53,7 @@ def all_interviewers():
     return models.Interviewer.objects.all()
 
 def all_times():
-    hours = [str(num).zfill(2) for num in range(0, 24)]
+    hours = [str(num).zfill(2) for num in range(9, 19)]
     minutes = ['00', '15', '30', '45']
     times = []
     for hour in hours:

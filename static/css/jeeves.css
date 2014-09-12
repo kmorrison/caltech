@@ -156,12 +156,20 @@ table.possible_sched {
 	width: 80%;
 }
 
-th.schedule-preference{
-	font-size: 10pt;
-  font-weight: normal;
-  text-align: left;
+table.preference_table {
+    border: none;
 }
 
+th.schedule-preference{
+    font-size: 10pt;
+    font-weight: normal;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.preference_table tr td{
+    padding-left: 14px;
+}
 
 .room-interview-name {
 	border-bottom: none;

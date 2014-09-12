@@ -25,10 +25,19 @@ $(document).ready(function() {
                  candidate_name_input.val(candidate_name);
                  template.find('form').append(candidate_name_input);
 
+                   var preference_table_html = $('<table class="preference_table">')
+                   var table_header = $('<tr><th class="schedule-preference">Name</th><th class="schedule-preference">Meets Pref.</th><th class="schedule-preference">Buffer</th><th class="schedule-preference">Events</th></tr>')
+                   template.find('.slots').append(preference_table_html);
+                   preference_table_html.append(table_header);
+                    // TODO: Rip out all this terrible js-making-html, it's driving me crazy
+                   function pickme(val) {
+                       if (val) {return "ui-icon ui-icon-plusthick"}
+                       else {return "ui-icon ui-icon-minus"}
+                   }
                  $.each(schedule.interview_slots, function(i, slot) {
-                   var slotHtml = $('<p>' + slot.start_time + ' ' + slot.interviewer_name + '</p>');
-                   template.find('.slots').append(slotHtml);
-                   
+                   var slotHtml = $('<tr><td>' + slot.start_time + ' ' + slot.interviewer_name + '</td>' + '<td><span class="' + pickme(slot.is_inside_time_preference) + '"></span></td><td><span class="' + pickme(slot.gets_buffer) + '"></span></td><td>' + slot.number_of_interviews + '</td></tr>');
+                   preference_table_html.append(slotHtml);
+
                    var startTimeInput = $('<input type="hidden" name="start_time">')
                    startTimeInput.val(slot.start_datetime);
                    var endTimeInput = $('<input type="hidden" name="end_time">')
