@@ -382,7 +382,7 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
         if possible_rooms:
-            onsite_rooms = [room for room in rooms if room.interviewer.is_suitable_for_onsite]
+            onsite_rooms = [room for room in possible_rooms if room.interviewer.is_suitable_for_onsite]
             if interview_type == models.InterviewType.ON_SITE and onsite_rooms:
                 possible_rooms = onsite_rooms
 
