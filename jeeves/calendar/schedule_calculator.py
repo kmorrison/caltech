@@ -364,7 +364,7 @@ def _preference_score(interviewer_slot, preferences_calendar):
     assert interviewer_slot.start_time.date() == interviewer_slot.end_time.date()
 
     if preferences_calendar.is_blocked_during(lib.TimePeriod(interviewer_slot.start_time, interviewer_slot.end_time)):
-        return 15
+        return 30
     return 0
 
 
