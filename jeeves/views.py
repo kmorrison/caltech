@@ -210,10 +210,10 @@ def interview_post(request):
     )
 
     start_time = datetime.fromtimestamp(float(interview_form['room_start_time'][0]))
-    start_time = start_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+    start_time = pytz.timezone(settings.TIME_ZONE).localize(start_time)
 
     end_time = datetime.fromtimestamp(float(interview_form['room_end_time'][0]))
-    end_time = end_time.replace(tzinfo=pytz.timezone(settings.TIME_ZONE))
+    end_time = pytz.timezone(settings.TIME_ZONE).localize(end_time)
 
     interview_type_string = models.InterviewTypeChoice(interview_type).display_string
 

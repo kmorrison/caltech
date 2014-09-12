@@ -381,10 +381,13 @@ def create_interview(possible_schedule, interviewers, rooms, preferences, interv
             possible_schedule[-1].end_time
         )
         possible_rooms = [room for room in rooms if room.has_availability_during(interview_duration)]
+
         if not possible_rooms:
+            # Don't want to consider interviews without a suitable room.
             return None
 
         onsite_rooms = [room for room in possible_rooms if room.interviewer.is_suitable_for_onsite]
+
         if interview_type == models.InterviewType.ON_SITE and onsite_rooms:
             possible_rooms = onsite_rooms
 
@@ -567,18 +570,21 @@ def get_interviews_with_all_interviewers(*args, **kwargs):
 
 def create_calendar_body(time_name_pairs, recruiter, user):
     list_of_interviewers = []
+    body = ''
 
+    body += "%s: Greet by %s\n" % ((time_name_pairs[0][0] - datetime.timedelta(minutes=15)).timetz().strftime("%I:%M %p"), recruiter.display_name)
     for time, name in time_name_pairs:
         list_of_interviewers.append(
             '%(time)s: %(name)s' % {
-                'time': time.timetz().strftime("%I:%M"),
+                'time': time.timetz().strftime("%I:%M %p"),
                 'name': name,
             },
         )
-    body = '\n'.join(list_of_interviewers)
+    body += '\n'.join(list_of_interviewers)
+    body += "\n%s: Goodbye %s" % ((time_name_pairs[-1][0] - datetime.timedelta(minutes=60)).timetz().strftime("%I:%M %p"), recruiter.display_name)
 
-    body += '\nRecruiter: %s (%s@%s)' % (recruiter.display_name, recruiter.name, recruiter.domain)
-    body += '\nScheduler by: %s' % (user.username,)
+    body += '\n\nRecruiter: %s (%s@%s)' % (recruiter.display_name, recruiter.name, recruiter.domain)
+    body += '\n\nScheduled by: %s' % (user.username,)
 
     return body
 
