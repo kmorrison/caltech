@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import timedelta
 from httplib import BadStatusLine
@@ -8,6 +9,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from caltech import secret
 from . import schedule
 from . import lib
+
+logger = logging.getLogger(__name__)
 
 MAX_INTERVIEWERS_IN_QUERY = 50
 
@@ -87,6 +90,12 @@ class InterviewCalendar(object):
                     period_of_interest.end_time
                 )
         ]
+        logger.debug("Interviewer:%s, TP:%r, busy_time:%r, free_times:%r" % (
+            interviewer.address,
+            period_of_interest,
+            busy_times,
+            self.free_times,
+        )
 
     def has_availability_during(self, time_period):
         for free_time in self.free_times:
